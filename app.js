@@ -1,239 +1,224 @@
+# app.js - Family Hotel Manager Completo
+
+```javascript
+/**
+ * Family Hotel Manager - Sistema completo per gestione preventivi
+ * Versione aggiornata con proxy CORS funzionanti 2025
+ */
+
 class FamilyHotelManager {
     constructor() {
         this.preventivi = [];
-        this.currentEditId = null;
+        this.currentEditingId = null;
+        this.extractedData = null;
+        
+        // Configurazione servizi con pesi per il calcolo del punteggio
+        this.servicesConfig = {
+            highPriority: [
+                { nome: "piscina", label: "Piscina", peso: 10 },
+                { nome: "miniClub", label: "Mini Club", peso: 10 },
+                { nome: "animazione", label: "Animazione", peso: 10 },
+                { nome: "spiaggiaPrivata", label: "Spiaggia Privata", peso: 10 }
+            ],
+            mediumPriority: [
+                { nome: "parcheggio", label: "Parcheggio", peso: 6 },
+                { nome: "wifi", label: "Wi-Fi Gratuito", peso: 6 },
+                { nome: "ristorante", label: "Ristorante", peso: 6 },
+                { nome: "spa", label: "Centro Benessere", peso: 6 }
+            ],
+            lowPriority: [
+                { nome: "palestra", label: "Palestra", peso: 3 },
+                { nome: "navetta", label: "Servizio Navetta", peso: 3 }
+            ]
+        };
+
+        // Proxy CORS aggiornati per il 2025
+        this.corsProxies = [
+            {
+                url: "https://corsproxy.io/?",
+                name: "CorsProxy.io",
+                timeout: 15000,
+                encodeUrl: true
+            },
+            {
+                url: "https://api.allorigins.win/get?url=",
+                name: "AllOrigins",
+                timeout: 20000,
+                encodeUrl: true,
+                parseResponse: true
+            },
+            {
+                url: "https://cors.x2u.in/",
+                name: "CORS.x2u.in",
+                timeout: 20000,
+                encodeUrl: false
+            },
+            {
+                url: "https://proxy.cors.sh/",
+                name: "CORS.sh",
+                timeout: 25000,
+                encodeUrl: false,
+                headers: { 'x-cors-api-key': 'temp_public_api' }
+            },
+            {
+                url: "https://api.codetabs.com/v1/proxy?quest=",
+                name: "CodeTabs",
+                timeout: 10000,
+                encodeUrl: true
+            }
+        ];
+
         this.init();
     }
 
     init() {
-        console.log('DOM loaded, initializing app');
-        this.initializeEventListeners();
         this.loadData();
+        this.bindEvents();
         this.updateDashboard();
-        console.log('Initialization complete, preventivi:', this.preventivi.length);
+        this.showSection('dashboard');
+        this.loadExampleData();
     }
 
-    initializeEventListeners() {
-        console.log('Setting up event listeners');
-        
+    loadExampleData() {
+        if (this.preventivi.length === 0) {
+            const exampleData = [
+                {
+                    id: this.generateId(),
+                    hotel: "Family Resort Marina",
+                    prezzo: 1450.00,
+                    checkIn: "2025-08-10",
+                    checkOut: "2025-08-17",
+                    adults: 2,
+                    children: 2,
+                    servizi: ["piscina", "miniClub", "animazione", "spiaggiaPrivata", "parcheggio", "wifi"],
+                    note: "Camera vista mare, vicino alla spiaggia",
+                    source: "manual",
+                    dataCreazione: new Date().toISOString()
+                },
+                {
+                    id: this.generateId(),
+                    hotel: "Residence Luna Mare",
+                    prezzo: 980.00,
+                    checkIn: "2025-08-10", 
+                    checkOut: "2025-08-17",
+                    adults: 2,
+                    children: 2,
+                    servizi: ["piscina", "parcheggio", "wifi", "spa"],
+                    note: "Appartamento con cucina, formula residence",
+                    source: "manual",
+                    dataCreazione: new Date().toISOString()
+                },
+                {
+                    id: this.generateId(),
+                    hotel: "Hotel Paradise Kids",
+                    prezzo: 1120.00,
+                    checkIn: "2025-08-10",
+                    checkOut: "2025-08-17", 
+                    adults: 2,
+                    children: 2,
+                    servizi: ["piscina", "miniClub", "animazione", "ristorante", "wifi"],
+                    note: "Specializzato per famiglie con bambini",
+                    source: "manual",
+                    dataCreazione: new Date().toISOString()
+                }
+            ];
+            
+            this.preventivi = exampleData;
+            this.saveData();
+        }
+    }
+
+    bindEvents() {
         // Navigation
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const section = e.target.dataset.section;
-                console.log('Navigation clicked:', section);
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const section = e.target.getAttribute('data-section');
                 this.showSection(section);
+                this.updateNavigation(e.target);
             });
         });
 
         // Form submission
-        const form = document.getElementById('quote-form');
+        const form = document.getElementById('preventivo-form');
         if (form) {
             form.addEventListener('submit', (e) => this.handleFormSubmit(e));
         }
 
         // Cancel edit button
-        const cancelBtn = document.getElementById('cancel-edit-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => this.cancelEdit());
         }
 
-        // Search and filters
+        // URL extraction
+        const extractBtn = document.getElementById('extract-url-btn');
+        if (extractBtn) {
+            extractBtn.addEventListener('click', () => this.handleUrlExtraction());
+        }
+
+        // Email parsing
+        const parseEmailBtn = document.getElementById('parse-email-btn');
+        if (parseEmailBtn) {
+            parseEmailBtn.addEventListener('click', () => this.handleEmailParsing());
+        }
+
+        // URL preview actions
+        const confirmExtraction = document.getElementById('confirm-extraction');
+        const editExtraction = document.getElementById('edit-extraction');
+        
+        if (confirmExtraction) {
+            confirmExtraction.addEventListener('click', () => this.confirmExtractedData());
+        }
+        
+        if (editExtraction) {
+            editExtraction.addEventListener('click', () => this.editExtractedData());
+        }
+
+        // Filters
         const searchFilter = document.getElementById('search-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        
         if (searchFilter) {
             searchFilter.addEventListener('input', () => this.applyFilters());
         }
-
-        const priceFilter = document.getElementById('price-filter');
-        if (priceFilter) {
-            priceFilter.addEventListener('change', () => this.applyFilters());
+        
+        if (sortFilter) {
+            sortFilter.addEventListener('change', () => this.applyFilters());
         }
 
-        const ratingFilter = document.getElementById('rating-filter');
-        if (ratingFilter) {
-            ratingFilter.addEventListener('change', () => this.applyFilters());
-        }
-
-        // Email import
-        const processEmailBtn = document.getElementById('process-email');
-        if (processEmailBtn) {
-            processEmailBtn.addEventListener('click', () => this.processEmailContent());
-        }
-
-        const processFilesBtn = document.getElementById('process-files');
-        if (processFilesBtn) {
-            processFilesBtn.addEventListener('click', () => this.processEmailFiles());
-        }
-
-        const saveEmailBtn = document.getElementById('save-email-data');
-        if (saveEmailBtn) {
-            saveEmailBtn.addEventListener('click', () => this.saveEmailData());
-        }
-
-        // URL import
-        const extractUrlBtn = document.getElementById('extract-url');
-        if (extractUrlBtn) {
-            extractUrlBtn.addEventListener('click', () => this.extractUrlData());
-        }
-
-        const saveUrlBtn = document.getElementById('save-url-data');
-        if (saveUrlBtn) {
-            saveUrlBtn.addEventListener('click', () => this.saveUrlData());
-        }
-
-        // Table actions (Edit and Delete)
-        const quotesTable = document.getElementById('quotes-table');
-        if (quotesTable) {
-            quotesTable.addEventListener('click', (e) => this.handleTableAction(e));
+        // Table actions (edit/delete)
+        const tableBody = document.getElementById('preventivi-tbody');
+        if (tableBody) {
+            tableBody.addEventListener('click', (e) => this.handleTableAction(e));
         }
 
         // Modal events
-        this.initializeModalEvents();
+        this.bindModalEvents();
     }
 
-    initializeModalEvents() {
+    bindModalEvents() {
         const modal = document.getElementById('delete-modal');
-        const closeButtons = document.querySelectorAll('.close-modal');
-        const confirmButton = document.querySelector('.confirm-delete');
+        const confirmDelete = document.getElementById('confirm-delete');
+        const cancelDelete = document.getElementById('cancel-delete');
+        const modalClose = document.querySelector('.modal-close');
+        const modalBackdrop = document.querySelector('.modal-backdrop');
 
-        // Close modal events
-        closeButtons.forEach(button => {
-            button.addEventListener('click', () => this.closeDeleteModal());
+        if (confirmDelete) {
+            confirmDelete.addEventListener('click', () => this.confirmDelete());
+        }
+
+        [cancelDelete, modalClose, modalBackdrop].forEach(element => {
+            if (element) {
+                element.addEventListener('click', () => this.hideModal());
+            }
         });
 
-        // Close modal when clicking outside
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.closeDeleteModal();
-                }
-            });
-        }
-
-        // Confirm delete
-        if (confirmButton) {
-            confirmButton.addEventListener('click', () => this.confirmDelete());
-        }
-
-        // ESC key to close modal
+        // Close modal on ESC key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal && modal.style.display === 'block') {
-                this.closeDeleteModal();
+            if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+                this.hideModal();
             }
         });
-    }
-
-    loadData() {
-        const stored = localStorage.getItem('preventivi');
-        if (stored) {
-            this.preventivi = JSON.parse(stored);
-            console.log('Data loaded from localStorage:', this.preventivi.length, 'items');
-        } else {
-            this.initializeExampleData();
-        }
-    }
-
-    saveData() {
-        localStorage.setItem('preventivi', JSON.stringify(this.preventivi));
-    }
-
-    initializeExampleData() {
-        this.preventivi = [
-            {
-                id: this.generateId(),
-                hotel: "Family Resort Marina",
-                checkIn: "2025-07-15",
-                checkOut: "2025-07-22",
-                adults: 2,
-                children: 2,
-                price: 1580,
-                location: "Rimini, Emilia-Romagna",
-                email: "info@familyresortmarina.it",
-                phone: "+39 0541 123456",
-                notes: "Ottima posizione fronte mare con servizi family-friendly completi",
-                services: {
-                    piscina: true,
-                    miniClub: true,
-                    animazione: true,
-                    spiaggiaPrivata: true,
-                    parcheggio: true,
-                    wifi: true,
-                    allInclusive: false,
-                    spa: true,
-                    palestra: false,
-                    ariaCondizionata: true
-                },
-                score: 0,
-                stars: 0,
-                source: "manuale"
-            },
-            {
-                id: this.generateId(),
-                hotel: "Hotel Delle Palme Family Club",
-                checkIn: "2025-08-01",
-                checkOut: "2025-08-08",
-                adults: 2,
-                children: 2,
-                price: 1200,
-                location: "Gatteo a Mare, Emilia-Romagna",
-                email: "booking@hoteldellepalme.it",
-                phone: "+39 0547 987654",
-                notes: "All inclusive con programmi dedicati per bambini 4-12 anni",
-                services: {
-                    piscina: true,
-                    miniClub: true,
-                    animazione: true,
-                    spiaggiaPrivata: false,
-                    parcheggio: true,
-                    wifi: true,
-                    allInclusive: true,
-                    spa: false,
-                    palestra: true,
-                    ariaCondizionata: true
-                },
-                score: 0,
-                stars: 0,
-                source: "email"
-            },
-            {
-                id: this.generateId(),
-                hotel: "Residence Luna Mare",
-                checkIn: "2025-07-20",
-                checkOut: "2025-07-27",
-                adults: 2,
-                children: 2,
-                price: 760,
-                location: "Cattolica, Emilia-Romagna",
-                email: "info@residencelunamare.it",
-                phone: "+39 0541 456789",
-                notes: "Appartamenti con cucina, ideale per famiglie indipendenti",
-                services: {
-                    piscina: true,
-                    miniClub: false,
-                    animazione: false,
-                    spiaggiaPrivata: false,
-                    parcheggio: true,
-                    wifi: true,
-                    allInclusive: false,
-                    spa: false,
-                    palestra: false,
-                    ariaCondizionata: true
-                },
-                score: 0,
-                stars: 0,
-                source: "url"
-            }
-        ];
-
-        this.preventivi.forEach(preventivo => {
-            preventivo.score = this.calculateScore(preventivo);
-            preventivo.stars = this.calculateStars(preventivo.score);
-        });
-
-        this.saveData();
-    }
-
-    generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
     showSection(sectionName) {
@@ -248,363 +233,135 @@ class FamilyHotelManager {
             targetSection.classList.add('active');
         }
 
-        // Update navigation
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.classList.remove('active');
+        // Reset form if switching to add section
+        if (sectionName === 'add' && !this.currentEditingId) {
+            this.resetForm();
+        }
+    }
+
+    updateNavigation(activeBtn) {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
         });
-
-        const activeTab = document.querySelector(`[data-section="${sectionName}"]`);
-        if (activeTab) {
-            activeTab.classList.add('active');
-        }
-
-        console.log('Showing section:', sectionName);
-
-        // Special handling for dashboard
-        if (sectionName === 'dashboard') {
-            this.updateDashboard();
-        }
+        activeBtn.classList.add('active');
     }
 
-    handleTableAction(e) {
-        const target = e.target;
-        
-        if (target.classList.contains('btn-edit')) {
-            const row = target.closest('tr');
-            const id = row.dataset.id;
-            this.editPreventivo(id);
-        } else if (target.classList.contains('btn-delete')) {
-            const row = target.closest('tr');
-            const id = row.dataset.id;
-            this.showDeleteModal(id);
-        }
-    }
-
-    editPreventivo(id) {
-        const preventivo = this.preventivi.find(p => p.id === id);
-        if (!preventivo) return;
-
-        // Populate form with existing data
-        this.populateForm(preventivo);
-        
-        // Set edit mode
-        this.currentEditId = id;
-        document.getElementById('current-edit-id').value = id;
-        
-        // Update UI
-        document.getElementById('form-title').textContent = 'Modifica Preventivo';
-        document.getElementById('submit-btn').textContent = 'Aggiorna Preventivo';
-        document.getElementById('cancel-edit-btn').style.display = 'inline-block';
-        
-        // Show the form section
-        this.showSection('add');
-        
-        // Highlight the row being edited
-        document.querySelectorAll('.dashboard-table tbody tr').forEach(row => {
-            row.classList.remove('editing');
-        });
-        const editingRow = document.querySelector(`tr[data-id="${id}"]`);
-        if (editingRow) {
-            editingRow.classList.add('editing');
-        }
-        
-        this.showToast('Modifica del preventivo in corso', 'info');
-    }
-
-    populateForm(preventivo) {
-        // Basic information
-        document.getElementById('hotel').value = preventivo.hotel || '';
-        document.getElementById('check-in').value = preventivo.checkIn || '';
-        document.getElementById('check-out').value = preventivo.checkOut || '';
-        document.getElementById('adults').value = preventivo.adults || 2;
-        document.getElementById('children').value = preventivo.children || 2;
-        document.getElementById('price').value = preventivo.price || '';
-        document.getElementById('location').value = preventivo.location || '';
-        document.getElementById('email').value = preventivo.email || '';
-        document.getElementById('phone').value = preventivo.phone || '';
-        document.getElementById('notes').value = preventivo.notes || '';
-
-        // Services
-        if (preventivo.services) {
-            Object.keys(preventivo.services).forEach(service => {
-                const checkbox = document.getElementById(service);
-                if (checkbox) {
-                    checkbox.checked = preventivo.services[service];
-                }
-            });
-        }
-    }
-
-    cancelEdit() {
-        this.currentEditId = null;
-        document.getElementById('current-edit-id').value = '';
-        document.getElementById('form-title').textContent = 'Aggiungi Nuovo Preventivo';
-        document.getElementById('submit-btn').textContent = 'Aggiungi Preventivo';
-        document.getElementById('cancel-edit-btn').style.display = 'none';
-        
-        // Clear form
-        document.getElementById('quote-form').reset();
-        
-        // Remove highlighting
-        document.querySelectorAll('.dashboard-table tbody tr').forEach(row => {
-            row.classList.remove('editing');
-        });
-        
-        this.showToast('Modifica annullata', 'info');
-    }
-
-    showDeleteModal(id) {
-        const preventivo = this.preventivi.find(p => p.id === id);
-        if (!preventivo) return;
-
-        // Set the hotel name in the modal
-        const hotelNameElement = document.querySelector('.hotel-name-to-delete');
-        if (hotelNameElement) {
-            hotelNameElement.textContent = preventivo.hotel;
-        }
-
-        // Store the ID for deletion
-        this.currentDeleteId = id;
-
-        // Show the modal
-        const modal = document.getElementById('delete-modal');
-        if (modal) {
-            modal.style.display = 'block';
-        }
-    }
-
-    closeDeleteModal() {
-        const modal = document.getElementById('delete-modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-        this.currentDeleteId = null;
-    }
-
-    confirmDelete() {
-        if (!this.currentDeleteId) return;
-
-        const preventivo = this.preventivi.find(p => p.id === this.currentDeleteId);
-        const hotelName = preventivo ? preventivo.hotel : 'Sconosciuto';
-
-        // Remove from array
-        this.preventivi = this.preventivi.filter(p => p.id !== this.currentDeleteId);
-        
-        // Save to localStorage
-        this.saveData();
-        
-        // Update dashboard
-        this.updateDashboard();
-        
-        // Close modal
-        this.closeDeleteModal();
-        
-        // Show success message
-        this.showToast(`Preventivo per ${hotelName} eliminato con successo`, 'success');
-    }
-
-    handleFormSubmit(e) {
-        e.preventDefault();
-        
-        const formData = this.getFormData();
-        
-        if (this.currentEditId) {
-            // Update existing preventivo
-            const index = this.preventivi.findIndex(p => p.id === this.currentEditId);
-            if (index !== -1) {
-                this.preventivi[index] = {
-                    ...formData,
-                    id: this.currentEditId,
-                    source: this.preventivi[index].source || 'manuale'
-                };
-                this.showToast('Preventivo aggiornato con successo!', 'success');
+    loadData() {
+        const stored = localStorage.getItem('family-hotel-preventivi');
+        if (stored) {
+            try {
+                this.preventivi = JSON.parse(stored);
+            } catch (e) {
+                console.error('Error loading data:', e);
+                this.preventivi = [];
             }
-            this.cancelEdit();
-        } else {
-            // Add new preventivo
-            const newPreventivo = {
-                ...formData,
-                id: this.generateId(),
-                source: 'manuale'
-            };
-            this.preventivi.push(newPreventivo);
-            this.showToast('Preventivo aggiunto con successo!', 'success');
         }
-
-        this.saveData();
-        this.updateDashboard();
-        document.getElementById('quote-form').reset();
-        this.showSection('dashboard');
     }
 
-    getFormData() {
-        const formData = {
-            hotel: document.getElementById('hotel').value,
-            checkIn: document.getElementById('check-in').value,
-            checkOut: document.getElementById('check-out').value,
-            adults: parseInt(document.getElementById('adults').value) || 2,
-            children: parseInt(document.getElementById('children').value) || 2,
-            price: parseFloat(document.getElementById('price').value) || 0,
-            location: document.getElementById('location').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value,
-            notes: document.getElementById('notes').value,
-            services: {}
-        };
+    saveData() {
+        try {
+            localStorage.setItem('family-hotel-preventivi', JSON.stringify(this.preventivi));
+        } catch (e) {
+            console.error('Error saving data:', e);
+            this.showToast('Errore nel salvataggio dei dati', 'error');
+        }
+    }
 
-        // Collect services
-        const serviceElements = document.querySelectorAll('.services-grid input[type="checkbox"]');
-        serviceElements.forEach(element => {
-            formData.services[element.name] = element.checked;
+    generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    calculateScore(servizi) {
+        let score = 0;
+        let maxScore = 0;
+
+        // Calculate max possible score
+        [...this.servicesConfig.highPriority, 
+         ...this.servicesConfig.mediumPriority, 
+         ...this.servicesConfig.lowPriority].forEach(service => {
+            maxScore += service.peso;
         });
 
-        formData.score = this.calculateScore(formData);
-        formData.stars = this.calculateStars(formData.score);
+        // Calculate actual score
+        servizi.forEach(serviceName => {
+            const service = [...this.servicesConfig.highPriority, 
+                           ...this.servicesConfig.mediumPriority, 
+                           ...this.servicesConfig.lowPriority]
+                           .find(s => s.nome === serviceName);
+            if (service) {
+                score += service.peso;
+            }
+        });
 
-        return formData;
-    }
-
-    calculateScore(preventivo) {
-        const servicesHighPriority = [
-            { nome: "piscina", label: "Piscina", peso: 10 },
-            { nome: "miniClub", label: "Mini Club", peso: 10 },
-            { nome: "animazione", label: "Animazione", peso: 10 },
-            { nome: "spiaggiaPrivata", label: "Spiaggia privata", peso: 10 },
-            { nome: "parcheggio", label: "Parcheggio", peso: 10 },
-            { nome: "wifi", label: "WiFi gratuito", peso: 10 },
-            { nome: "allInclusive", label: "All Inclusive", peso: 10 },
-            { nome: "spa", label: "SPA/Benessere", peso: 10 },
-            { nome: "palestra", label: "Palestra", peso: 10 },
-            { nome: "ariaCondizionata", label: "Aria condizionata", peso: 10 }
-        ];
-
-        let score = 0;
-        if (preventivo.services) {
-            servicesHighPriority.forEach(service => {
-                if (preventivo.services[service.nome]) {
-                    score += service.peso;
-                }
-            });
-        }
-
-        return score;
-    }
-
-    calculateStars(score) {
-        if (score >= 80) return 5;
-        if (score >= 60) return 4;
-        if (score >= 40) return 3;
-        if (score >= 20) return 2;
-        return 1;
+        // Convert to 5-star rating
+        return Math.round((score / maxScore) * 5);
     }
 
     updateDashboard() {
-        console.log('Updating dashboard with', this.preventivi.length, 'preventivi');
-        
         this.updateStats();
         this.renderTable();
     }
 
     updateStats() {
-        const total = this.preventivi.length;
-        const avgPrice = total > 0 ? Math.round(this.preventivi.reduce((sum, p) => sum + p.price, 0) / total) : 0;
-        const bestRating = total > 0 ? Math.max(...this.preventivi.map(p => p.stars)) : 0;
-        const prices = this.preventivi.map(p => p.price).sort((a, b) => a - b);
-        const maxSavings = prices.length > 1 ? Math.round(prices[prices.length - 1] - prices[0]) : 0;
+        const totalCount = this.preventivi.length;
+        const avgPrice = totalCount > 0 
+            ? Math.round(this.preventivi.reduce((sum, p) => sum + p.prezzo, 0) / totalCount)
+            : 0;
+        const bestRating = totalCount > 0 
+            ? Math.max(...this.preventivi.map(p => this.calculateScore(p.servizi || [])))
+            : 0;
 
-        document.getElementById('total-quotes').textContent = total;
-        document.getElementById('avg-price').textContent = `€${avgPrice}`;
-        document.getElementById('best-rating').textContent = `${bestRating}★`;
-        document.getElementById('max-savings').textContent = `€${maxSavings}`;
+        const elements = {
+            'total-count': totalCount,
+            'avg-price': `€${avgPrice}`,
+            'best-rating': `${bestRating} ★`
+        };
 
-        console.log('Stats updated - Total:', total, 'Avg:', avgPrice, 'Best:', bestRating);
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
     }
 
     renderTable() {
-        const tbody = document.getElementById('quotes-table');
+        const tbody = document.getElementById('preventivi-tbody');
+        const noData = document.getElementById('no-data');
+        
         if (!tbody) return;
 
-        let filteredPreventivi = [...this.preventivi];
-        
-        // Apply filters
-        const searchTerm = document.getElementById('search-filter')?.value.toLowerCase() || '';
-        const priceFilter = document.getElementById('price-filter')?.value || '';
-        const ratingFilter = document.getElementById('rating-filter')?.value || '';
-
-        if (searchTerm) {
-            filteredPreventivi = filteredPreventivi.filter(p => 
-                p.hotel.toLowerCase().includes(searchTerm) ||
-                p.location.toLowerCase().includes(searchTerm)
-            );
+        if (this.preventivi.length === 0) {
+            tbody.innerHTML = '';
+            if (noData) noData.style.display = 'block';
+            return;
         }
 
-        if (priceFilter) {
-            filteredPreventivi = filteredPreventivi.filter(p => {
-                switch (priceFilter) {
-                    case 'low': return p.price <= 800;
-                    case 'medium': return p.price > 800 && p.price <= 1500;
-                    case 'high': return p.price > 1500;
-                    default: return true;
-                }
-            });
-        }
+        if (noData) noData.style.display = 'none';
 
-        if (ratingFilter) {
-            const minRating = parseInt(ratingFilter);
-            filteredPreventivi = filteredPreventivi.filter(p => p.stars >= minRating);
-        }
-
-        tbody.innerHTML = filteredPreventivi.map(preventivo => {
-            const servicesArray = [];
-            if (preventivo.services) {
-                Object.keys(preventivo.services).forEach(key => {
-                    if (preventivo.services[key]) {
-                        const labels = {
-                            piscina: '🏊',
-                            miniClub: '🎈',
-                            animazione: '🎭',
-                            spiaggiaPrivata: '🏖️',
-                            parcheggio: '🚗',
-                            wifi: '📶',
-                            allInclusive: '🍽️',
-                            spa: '💆',
-                            palestra: '🏋️',
-                            ariaCondizionata: '❄️'
-                        };
-                        servicesArray.push(labels[key] || key);
-                    }
-                });
-            }
+        tbody.innerHTML = this.preventivi.map(preventivo => {
+            const score = this.calculateScore(preventivo.servizi || []);
+            const servicesHtml = this.renderServiceTags(preventivo.servizi || []);
+            const isEditing = this.currentEditingId === preventivo.id;
 
             return `
-                <tr data-id="${preventivo.id}">
+                <tr ${isEditing ? 'class="editing"' : ''} data-id="${preventivo.id}">
                     <td>
-                        <strong>${preventivo.hotel}</strong>
-                        <br><small>${preventivo.location || 'N/A'}</small>
+                        <strong>${this.escapeHtml(preventivo.hotel)}</strong>
+                        ${preventivo.note ? `<br><small>${this.escapeHtml(preventivo.note)}</small>` : ''}
                     </td>
-                    <td><strong>€${preventivo.price}</strong></td>
-                    <td>
-                        ${preventivo.checkIn} <br>
-                        <small>→ ${preventivo.checkOut}</small>
-                    </td>
-                    <td>
-                        <span class="rating-stars">${'★'.repeat(preventivo.stars)}${'☆'.repeat(5-preventivo.stars)}</span>
-                        <br><small>${preventivo.score}/100</small>
-                    </td>
-                    <td>
-                        <div class="service-tags">
-                            ${servicesArray.slice(0, 3).map(service => 
-                                `<span class="service-tag">${service}</span>`
-                            ).join('')}
-                            ${servicesArray.length > 3 ? `<span class="service-tag">+${servicesArray.length - 3}</span>` : ''}
-                        </div>
-                    </td>
+                    <td><strong>€${preventivo.prezzo.toFixed(2)}</strong></td>
+                    <td>${this.formatDate(preventivo.checkIn)}</td>
+                    <td>${this.formatDate(preventivo.checkOut)}</td>
+                    <td>${preventivo.adults} + ${preventivo.children}</td>
+                    <td>${'★'.repeat(score)} (${score}/5)</td>
+                    <td>${servicesHtml}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-sm btn-primary btn-edit" title="Modifica">
+                            <button class="edit-btn btn-sm" data-action="edit" data-id="${preventivo.id}">
                                 ✏️ Modifica
                             </button>
-                            <button class="btn btn-sm btn-danger btn-delete" title="Elimina">
+                            <button class="delete-btn btn-sm" data-action="delete" data-id="${preventivo.id}">
                                 🗑️ Elimina
                             </button>
                         </div>
@@ -612,223 +369,784 @@ class FamilyHotelManager {
                 </tr>
             `;
         }).join('');
-
-        console.log('Rendering table with', filteredPreventivi.length, 'quotes');
     }
 
-    applyFilters() {
+    renderServiceTags(servizi) {
+        if (!servizi || servizi.length === 0) {
+            return '<span class="text-muted">Nessun servizio</span>';
+        }
+
+        return `<div class="service-tags">
+            ${servizi.slice(0, 3).map(servizio => {
+                const service = [...this.servicesConfig.highPriority, 
+                               ...this.servicesConfig.mediumPriority, 
+                               ...this.servicesConfig.lowPriority]
+                               .find(s => s.nome === servizio);
+                return `<span class="service-tag">${service ? service.label : servizio}</span>`;
+            }).join('')}
+            ${servizi.length > 3 ? `<span class="service-tag">+${servizi.length - 3}</span>` : ''}
+        </div>`;
+    }
+
+    handleTableAction(e) {
+        const action = e.target.getAttribute('data-action');
+        const id = e.target.getAttribute('data-id');
+
+        if (!action || !id) return;
+
+        switch (action) {
+            case 'edit':
+                this.editPreventivo(id);
+                break;
+            case 'delete':
+                this.showDeleteModal(id);
+                break;
+        }
+    }
+
+    editPreventivo(id) {
+        const preventivo = this.preventivi.find(p => p.id === id);
+        if (!preventivo) return;
+
+        this.currentEditingId = id;
+        
+        // Populate form
+        document.getElementById('edit-id').value = id;
+        document.getElementById('hotel-name').value = preventivo.hotel;
+        document.getElementById('hotel-price').value = preventivo.prezzo;
+        document.getElementById('check-in').value = preventivo.checkIn;
+        document.getElementById('check-out').value = preventivo.checkOut;
+        document.getElementById('adults').value = preventivo.adults || 2;
+        document.getElementById('children').value = preventivo.children || 2;
+        document.getElementById('notes').value = preventivo.note || '';
+
+        // Set services
+        document.querySelectorAll('input[name="service"]').forEach(checkbox => {
+            checkbox.checked = (preventivo.servizi || []).includes(checkbox.value);
+        });
+
+        // Update form title and buttons
+        document.getElementById('form-title').textContent = 'Modifica Preventivo';
+        document.getElementById('submit-btn').innerHTML = '💾 Aggiorna Preventivo';
+        document.getElementById('cancel-btn').style.display = 'inline-flex';
+
+        // Switch to form section and update table
+        this.showSection('add');
+        this.updateNavigation(document.querySelector('[data-section="add"]'));
         this.renderTable();
     }
 
-    // Email processing methods
-    processEmailContent() {
-        const content = document.getElementById('email-content').value;
-        if (!content.trim()) {
-            this.showToast('Inserisci il contenuto della email', 'warning');
-            return;
-        }
+    showDeleteModal(id) {
+        const preventivo = this.preventivi.find(p => p.id === id);
+        if (!preventivo) return;
 
-        const extractedData = this.parseEmailContent(content);
-        this.showEmailPreview(extractedData);
+        document.getElementById('delete-hotel-name').textContent = preventivo.hotel;
+        document.getElementById('delete-modal').style.display = 'flex';
+        document.getElementById('delete-modal').setAttribute('data-delete-id', id);
     }
 
-    processEmailFiles() {
-        const files = document.getElementById('email-file').files;
-        if (files.length === 0) {
-            this.showToast('Seleziona almeno un file', 'warning');
-            return;
+    hideModal() {
+        const modal = document.getElementById('delete-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.removeAttribute('data-delete-id');
         }
-
-        // Process first file for demo
-        const file = files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const content = e.target.result;
-            const extractedData = this.parseEmailContent(content);
-            this.showEmailPreview(extractedData);
-        };
-        reader.readAsText(file);
     }
 
-    parseEmailContent(content) {
-        const data = {
-            hotel: '',
-            checkIn: '',
-            checkOut: '',
-            price: 0,
-            location: '',
-            services: {}
-        };
-
-        // Basic pattern matching for Italian emails
-        const hotelMatch = content.match(/(?:hotel|albergo|resort|residence)\s+([^\n\r]{5,50})/i);
-        if (hotelMatch) data.hotel = hotelMatch[1].trim();
-
-        const priceMatch = content.match(/(?:€|euro)\s*(\d+(?:[\.,]\d+)?)/i);
-        if (priceMatch) data.price = parseFloat(priceMatch[1].replace(',', '.'));
-
-        // Date patterns
-        const datePattern = /(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/g;
-        const dates = [];
-        let match;
-        while ((match = datePattern.exec(content)) !== null) {
-            dates.push(`${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`);
-        }
-        if (dates.length >= 2) {
-            data.checkIn = dates[0];
-            data.checkOut = dates[1];
-        }
-
-        // Services detection
-        const serviceKeywords = {
-            piscina: /piscina/i,
-            miniClub: /mini[\s-]?club|baby[\s-]?club/i,
-            animazione: /animazione|intrattenimento/i,
-            spiaggiaPrivata: /spiaggia[\s]privata/i,
-            parcheggio: /parcheggio|parking/i,
-            wifi: /wi[\s-]?fi|internet/i,
-            allInclusive: /all[\s-]?inclusive|tutto[\s]incluso/i
-        };
-
-        Object.keys(serviceKeywords).forEach(service => {
-            data.services[service] = serviceKeywords[service].test(content);
-        });
-
-        return data;
-    }
-
-    showEmailPreview(data) {
-        const resultsSection = document.getElementById('email-results');
-        const previewDiv = document.getElementById('email-preview');
+    confirmDelete() {
+        const modal = document.getElementById('delete-modal');
+        const id = modal ? modal.getAttribute('data-delete-id') : null;
         
-        if (!resultsSection || !previewDiv) return;
+        if (!id) return;
 
-        const servicesHtml = Object.keys(data.services)
-            .filter(key => data.services[key])
-            .map(service => `<span class="service-tag">${service}</span>`)
-            .join('');
+        const preventivo = this.preventivi.find(p => p.id === id);
+        if (preventivo) {
+            this.preventivi = this.preventivi.filter(p => p.id !== id);
+            this.saveData();
+            this.updateDashboard();
+            this.showToast(`Preventivo "${preventivo.hotel}" eliminato con successo`, 'success');
+            
+            // If we were editing this preventivo, cancel edit
+            if (this.currentEditingId === id) {
+                this.cancelEdit();
+            }
+        }
 
-        previewDiv.innerHTML = `
-            <div class="preview-grid">
-                <div class="preview-item">
-                    <h4>🏨 Hotel</h4>
-                    <p>${data.hotel || 'Non trovato'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>💰 Prezzo</h4>
-                    <p>€${data.price || 'Non trovato'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>📅 Check-in</h4>
-                    <p>${data.checkIn || 'Non trovato'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>📅 Check-out</h4>
-                    <p>${data.checkOut || 'Non trovato'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>🎯 Servizi</h4>
-                    <div>${servicesHtml || 'Nessun servizio identificato'}</div>
-                </div>
-            </div>
-        `;
-
-        this.currentEmailData = data;
-        resultsSection.style.display = 'block';
-        this.showToast('Dati estratti dalla email!', 'success');
+        this.hideModal();
     }
 
-    saveEmailData() {
-        if (!this.currentEmailData) return;
+    cancelEdit() {
+        this.currentEditingId = null;
+        this.resetForm();
+        this.renderTable();
+        this.showSection('dashboard');
+        this.updateNavigation(document.querySelector('[data-section="dashboard"]'));
+    }
 
-        const preventivo = {
-            ...this.currentEmailData,
-            id: this.generateId(),
-            adults: 2,
-            children: 2,
-            email: '',
-            phone: '',
-            notes: 'Importato da email',
-            source: 'email'
-        };
+    resetForm() {
+        const form = document.getElementById('preventivo-form');
+        if (form) {
+            form.reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('adults').value = '2';
+            document.getElementById('children').value = '2';
+        }
 
-        preventivo.score = this.calculateScore(preventivo);
-        preventivo.stars = this.calculateStars(preventivo.score);
+        // Reset form title and buttons
+        document.getElementById('form-title').textContent = 'Aggiungi Nuovo Preventivo';
+        document.getElementById('submit-btn').innerHTML = '💾 Salva Preventivo';
+        document.getElementById('cancel-btn').style.display = 'none';
+    }
 
-        this.preventivi.push(preventivo);
+    handleFormSubmit(e) {
+        e.preventDefault();
+
+        const formData = this.getFormData();
+        if (!this.validateFormData(formData)) {
+            return;
+        }
+
+        if (this.currentEditingId) {
+            // Update existing
+            const index = this.preventivi.findIndex(p => p.id === this.currentEditingId);
+            if (index !== -1) {
+                this.preventivi[index] = {
+                    ...this.preventivi[index],
+                    ...formData,
+                    dataModifica: new Date().toISOString()
+                };
+                this.showToast('Preventivo aggiornato con successo!', 'success');
+            }
+        } else {
+            // Create new
+            const newPreventivo = {
+                id: this.generateId(),
+                ...formData,
+                source: 'manual',
+                dataCreazione: new Date().toISOString()
+            };
+            this.preventivi.push(newPreventivo);
+            this.showToast('Preventivo aggiunto con successo!', 'success');
+        }
+
         this.saveData();
         this.updateDashboard();
-
-        document.getElementById('email-results').style.display = 'none';
-        document.getElementById('email-content').value = '';
-        
-        this.showToast('Preventivo salvato dalla email!', 'success');
-        this.showSection('dashboard');
+        this.cancelEdit();
     }
 
-    // URL extraction methods
-    async extractUrlData() {
+    getFormData() {
+        const servizi = Array.from(document.querySelectorAll('input[name="service"]:checked'))
+                            .map(cb => cb.value);
+
+        return {
+            hotel: document.getElementById('hotel-name').value.trim(),
+            prezzo: parseFloat(document.getElementById('hotel-price').value),
+            checkIn: document.getElementById('check-in').value,
+            checkOut: document.getElementById('check-out').value,
+            adults: parseInt(document.getElementById('adults').value),
+            children: parseInt(document.getElementById('children').value),
+            servizi: servizi,
+            note: document.getElementById('notes').value.trim()
+        };
+    }
+
+    validateFormData(data) {
+        const errors = [];
+
+        if (!data.hotel) errors.push('Nome hotel è obbligatorio');
+        if (!data.prezzo || data.prezzo <= 0) errors.push('Prezzo deve essere maggiore di 0');
+        if (!data.checkIn) errors.push('Data check-in è obbligatoria');
+        if (!data.checkOut) errors.push('Data check-out è obbligatoria');
+        if (new Date(data.checkIn) >= new Date(data.checkOut)) {
+            errors.push('La data di check-out deve essere successiva al check-in');
+        }
+        if (!data.adults || data.adults < 1) errors.push('Deve esserci almeno 1 adulto');
+        if (data.children < 0) errors.push('Il numero di bambini non può essere negativo');
+
+        if (errors.length > 0) {
+            this.showToast('Errori nel form: ' + errors.join(', '), 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    // URL EXTRACTION METHODS
+    async handleUrlExtraction() {
         const urlInput = document.getElementById('url-input');
         const url = urlInput.value.trim();
-        
+
         if (!url) {
-            this.showToast('Inserisci un URL valido', 'warning');
+            this.showToast('Inserisci un URL valido', 'error');
             return;
         }
 
         if (!this.isValidUrl(url)) {
-            this.showToast('URL non valido', 'error');
+            this.showToast('L\'URL inserito non è valido', 'error');
             return;
         }
 
-        // Updated CORS proxies for 2025
-        const proxies = [
-            'https://api.allorigins.win/get?url=',
-            'https://cors-anywhere.herokuapp.com/',
-            'https://thingproxy.freeboard.io/fetch/',
-            'https://cors-proxy.htmldriven.com/?url=',
-            'https://yacdn.org/proxy/'
-        ];
+        this.showExtractionStatus('Iniziando estrazione dati...', 0);
 
-        for (let i = 0; i < proxies.length; i++) {
-            const proxy = proxies[i];
-            this.showToast(`Tentativo ${i + 1}/${proxies.length}: ${proxy.split('/')[2]}...`, 'info');
+        try {
+            const html = await this.fetchWithCORS(url);
+            const extractedData = this.parseHotelData(html, url);
+            
+            if (extractedData) {
+                this.extractedData = extractedData;
+                this.showUrlPreview(extractedData);
+                this.hideExtractionStatus();
+                this.showToast('Dati estratti con successo!', 'success');
+            } else {
+                throw new Error('Nessun dato hotel trovato nella pagina');
+            }
+            
+        } catch (error) {
+            console.error('Extraction error:', error);
+            this.hideExtractionStatus();
+            this.showToast('Errore nell\'estrazione: ' + error.message, 'error');
+        }
+    }
+
+    async fetchWithCORS(url) {
+        let lastError = null;
+        
+        for (let i = 0; i < this.corsProxies.length; i++) {
+            const proxy = this.corsProxies[i];
             
             try {
-                const response = await fetch(proxy + encodeURIComponent(url), {
-                    method: 'GET',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                let htmlContent;
-                if (proxy.includes('allorigins')) {
-                    const data = await response.json();
-                    htmlContent = data.contents;
-                } else {
-                    htmlContent = await response.text();
-                }
-
-                const extractedData = this.parseHtmlForHotelData(htmlContent);
+                this.showExtractionStatus(`Tentativo ${i + 1}/${this.corsProxies.length}: ${proxy.name}...`, 
+                                        (i / this.corsProxies.length) * 50);
                 
-                if (extractedData.hotel || extractedData.price) {
-                    this.showToast(`Dati estratti con successo! Proxy usato: ${proxy.split('/')[2]}`, 'success');
-                    this.showUrlPreview(extractedData);
-                    return;
+                const proxyUrl = this.buildProxyUrl(proxy, url);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), proxy.timeout);
+                
+                const response = await fetch(proxyUrl, {
+                    signal: controller.signal,
+                    headers: proxy.headers || {}
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
+                
+                let responseText;
+                if (proxy.parseResponse) {
+                    const json = await response.json();
+                    responseText = json.contents || json.data || '';
+                } else {
+                    responseText = await response.text();
+                }
+                
+                if (responseText && responseText.length > 100) {
+                    this.showExtractionStatus(`Dati ricevuti da ${proxy.name}, parsing in corso...`, 75);
+                    return responseText;
+                }
+                
             } catch (error) {
-                console.log(`Proxy ${proxy} fallito:`, error);
+                console.warn(`Proxy ${proxy.name} failed:`, error.message);
+                lastError = error;
+                continue;
+            }
+        }
+        
+        throw new Error(`Tutti i proxy CORS non disponibili. Ultimo errore: ${lastError?.message || 'Sconosciuto'}`);
+    }
+
+    buildProxyUrl(proxy, targetUrl) {
+        if (proxy.encodeUrl) {
+            return proxy.url + encodeURIComponent(targetUrl);
+        } else {
+            return proxy.url + targetUrl;
+        }
+    }
+
+    parseHotelData(html, sourceUrl) {
+        try {
+            // Create a temporary DOM element to parse HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            const extractedData = {
+                hotel: this.extractHotelName(doc, html),
+                prezzo: this.extractPrice(doc, html),
+                checkIn: this.extractDate(doc, html, 'checkin'),
+                checkOut: this.extractDate(doc, html, 'checkout'),
+                adults: this.extractGuests(doc, html, 'adults') || 2,
+                children: this.extractGuests(doc, html, 'children') || 2,
+                servizi: this.extractServices(doc, html),
+                note: `Estratto da: ${sourceUrl}`,
+                source: 'url'
+            };
+
+            // Validate essential data
+            if (!extractedData.hotel && !extractedData.prezzo) {
+                return null;
+            }
+
+            return extractedData;
+            
+        } catch (error) {
+            console.error('Parsing error:', error);
+            return null;
+        }
+    }
+
+    extractHotelName(doc, html) {
+        // Try multiple selectors for hotel name
+        const selectors = [
+            'meta[property="og:title"]',
+            'meta[name="twitter:title"]',
+            'title',
+            'h1',
+            '.hotel-name',
+            '.property-name',
+            '[class*="hotel"]',
+            '[class*="name"]'
+        ];
+
+        for (const selector of selectors) {
+            const element = doc.querySelector(selector);
+            if (element) {
+                let name = element.getAttribute('content') || element.textContent || '';
+                name = name.trim();
+                if (name && name.length > 3 && name.length < 100) {
+                    // Clean up common patterns
+                    name = name.replace(/\s*-\s*(Booking\.com|Hotels\.com|Expedia).*$/i, '');
+                    name = name.replace(/^\s*(Hotel|Resort|Residence)\s*/i, '');
+                    return name;
+                }
             }
         }
 
-        this.showToast('Impossibile estrarre dati da questo URL. Verifica che sia accessibile pubblicamente.', 'error');
+        // Fallback: try regex on HTML
+        const patterns = [
+            /hotel["\s]+([^"<>{}\n]{10,50})/gi,
+            /property["\s]+([^"<>{}\n]{10,50})/gi,
+            /"hotelName"[:\s]*"([^"]{5,50})"/gi
+        ];
+
+        for (const pattern of patterns) {
+            const match = pattern.exec(html);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+        }
+
+        return null;
     }
 
+    extractPrice(doc, html) {
+        // Try to find price in various formats
+        const pricePatterns = [
+            /€\s*(\d{1,4}(?:[.,]\d{2})?)/g,
+            /(\d{1,4}(?:[.,]\d{2})?)\s*€/g,
+            /EUR\s*(\d{1,4}(?:[.,]\d{2})?)/g,
+            /(\d{1,4}(?:[.,]\d{2})?)\s*EUR/g,
+            /"price"[:\s]*(\d+(?:\.\d{2})?)/g,
+            /"amount"[:\s]*(\d+(?:\.\d{2})?)/g
+        ];
+
+        const prices = [];
+        
+        for (const pattern of pricePatterns) {
+            let match;
+            while ((match = pattern.exec(html)) !== null) {
+                const price = parseFloat(match[1].replace(',', '.'));
+                if (price >= 50 && price <= 5000) { // Reasonable price range
+                    prices.push(price);
+                }
+            }
+        }
+
+        if (prices.length > 0) {
+            // Return the most common price or median
+            prices.sort((a, b) => a - b);
+            return prices[Math.floor(prices.length / 2)];
+        }
+
+        return null;
+    }
+
+    extractDate(doc, html, type) {
+        const today = new Date();
+        const patterns = [
+            /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/g,
+            /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/g,
+            /"checkIn"[:\s]*"(\d{4}-\d{2}-\d{2})"/g,
+            /"checkOut"[:\s]*"(\d{4}-\d{2}-\d{2})"/g
+        ];
+
+        const dates = [];
+        
+        for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(html)) !== null) {
+                let dateStr;
+                if (match[0].includes('"check')) {
+                    dateStr = match[1];
+                } else if (match[1].length === 4) {
+                    // YYYY-MM-DD format
+                    dateStr = `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+                } else {
+                    // DD/MM/YYYY format
+                    dateStr = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+                }
+                
+                const date = new Date(dateStr);
+                if (date > today && date < new Date(today.getFullYear() + 1, 11, 31)) {
+                    dates.push(dateStr);
+                }
+            }
+        }
+
+        if (dates.length >= 2) {
+            dates.sort();
+            return type === 'checkin' ? dates[0] : dates[1];
+        } else if (dates.length === 1) {
+            return dates[0];
+        }
+
+        return null;
+    }
+
+    extractGuests(doc, html, type) {
+        const patterns = [
+            /"adults"[:\s]*(\d+)/g,
+            /"children"[:\s]*(\d+)/g,
+            /adulti[:\s]*(\d+)/gi,
+            /bambini[:\s]*(\d+)/gi
+        ];
+
+        for (const pattern of patterns) {
+            const match = pattern.exec(html);
+            if (match) {
+                const isAdult = pattern.source.toLowerCase().includes('adult');
+                if ((type === 'adults' && isAdult) || (type === 'children' && !isAdult)) {
+                    return parseInt(match[1]);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    extractServices(doc, html) {
+        const serviceKeywords = {
+            piscina: ['piscina', 'pool', 'swimming'],
+            miniClub: ['mini club', 'kids club', 'bambini'],
+            animazione: ['animazione', 'entertainment', 'animation'],
+            spiaggiaPrivata: ['spiaggia', 'beach', 'mare'],
+            parcheggio: ['parcheggio', 'parking'],
+            wifi: ['wifi', 'internet'],
+            spa: ['spa', 'benessere', 'wellness'],
+            ristorante: ['ristorante', 'restaurant', 'dining'],
+            palestra: ['palestra', 'gym', 'fitness'],
+            navetta: ['navetta', 'shuttle', 'transfer']
+        };
+
+        const services = [];
+        const text = html.toLowerCase();
+
+        for (const [serviceKey, keywords] of Object.entries(serviceKeywords)) {
+            if (keywords.some(keyword => text.includes(keyword))) {
+                services.push(serviceKey);
+            }
+        }
+
+        return services;
+    }
+
+    showExtractionStatus(message, progress) {
+        const statusElement = document.getElementById('extraction-status');
+        const messageElement = statusElement?.querySelector('.status-message');
+        const progressElement = statusElement?.querySelector('.progress-fill');
+
+        if (statusElement) {
+            statusElement.style.display = 'block';
+        }
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+        if (progressElement) {
+            progressElement.style.width = `${progress}%`;
+        }
+    }
+
+    hideExtractionStatus() {
+        const statusElement = document.getElementById('extraction-status');
+        if (statusElement) {
+            statusElement.style.display = 'none';
+        }
+    }
+
+    showUrlPreview(data) {
+        const preview = document.getElementById('url-preview');
+        if (!preview) return;
+
+        // Populate preview elements
+        const elements = {
+            'preview-hotel': data.hotel || 'Non trovato',
+            'preview-price': data.prezzo ? `€${data.prezzo.toFixed(2)}` : 'Non trovato',
+            'preview-checkin': data.checkIn || 'Non trovato',
+            'preview-checkout': data.checkOut || 'Non trovato',
+            'preview-services': data.servizi?.length > 0 ? data.servizi.join(', ') : 'Nessuno'
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        });
+
+        preview.style.display = 'block';
+        preview.classList.add('fade-in');
+    }
+
+    confirmExtractedData() {
+        if (!this.extractedData) return;
+
+        // Add the preventivo directly
+        const newPreventivo = {
+            id: this.generateId(),
+            ...this.extractedData,
+            dataCreazione: new Date().toISOString()
+        };
+
+        this.preventivi.push(newPreventivo);
+        this.saveData();
+        this.updateDashboard();
+        
+        this.showToast('Preventivo aggiunto con successo!', 'success');
+        this.hideUrlPreview();
+        this.showSection('dashboard');
+        this.updateNavigation(document.querySelector('[data-section="dashboard"]'));
+    }
+
+    editExtractedData() {
+        if (!this.extractedData) return;
+
+        // Populate form with extracted data
+        document.getElementById('hotel-name').value = this.extractedData.hotel || '';
+        document.getElementById('hotel-price').value = this.extractedData.prezzo || '';
+        document.getElementById('check-in').value = this.extractedData.checkIn || '';
+        document.getElementById('check-out').value = this.extractedData.checkOut || '';
+        document.getElementById('adults').value = this.extractedData.adults || 2;
+        document.getElementById('children').value = this.extractedData.children || 2;
+        document.getElementById('notes').value = this.extractedData.note || '';
+
+        // Set services
+        document.querySelectorAll('input[name="service"]').forEach(checkbox => {
+            checkbox.checked = (this.extractedData.servizi || []).includes(checkbox.value);
+        });
+
+        this.hideUrlPreview();
+        this.showSection('add');
+        this.updateNavigation(document.querySelector('[data-section="add"]'));
+    }
+
+    hideUrlPreview() {
+        const preview = document.getElementById('url-preview');
+        if (preview) {
+            preview.style.display = 'none';
+        }
+        document.getElementById('url-input').value = '';
+        this.extractedData = null;
+    }
+
+    // EMAIL PARSING METHODS
+    handleEmailParsing() {
+        const emailContent = document.getElementById('email-content').value.trim();
+        
+        if (!emailContent) {
+            this.showToast('Inserisci il contenuto dell\'email', 'error');
+            return;
+        }
+
+        try {
+            const parsedData = this.parseEmailContent(emailContent);
+            
+            if (parsedData) {
+                // Populate form with parsed data
+                this.fillFormWithParsedData(parsedData);
+                this.showToast('Email analizzata con successo!', 'success');
+                this.showSection('add');
+                this.updateNavigation(document.querySelector('[data-section="add"]'));
+            } else {
+                this.showToast('Impossibile estrarre dati dall\'email', 'warning');
+            }
+            
+        } catch (error) {
+            console.error('Email parsing error:', error);
+            this.showToast('Errore nell\'analisi dell\'email', 'error');
+        }
+    }
+
+    parseEmailContent(content) {
+        const data = {};
+        
+        // Extract hotel name
+        const hotelPatterns = [
+            /hotel[:\s]+([^\n\r]{5,50})/gi,
+            /struttura[:\s]+([^\n\r]{5,50})/gi,
+            /albergo[:\s]+([^\n\r]{5,50})/gi
+        ];
+        
+        for (const pattern of hotelPatterns) {
+            const match = pattern.exec(content);
+            if (match) {
+                data.hotel = match[1].trim();
+                break;
+            }
+        }
+
+        // Extract price
+        const pricePatterns = [
+            /totale[:\s]*€?\s*(\d{1,4}(?:[.,]\d{2})?)/gi,
+            /prezzo[:\s]*€?\s*(\d{1,4}(?:[.,]\d{2})?)/gi,
+            /importo[:\s]*€?\s*(\d{1,4}(?:[.,]\d{2})?)/gi,
+            /€\s*(\d{1,4}(?:[.,]\d{2})?)/g
+        ];
+
+        for (const pattern of pricePatterns) {
+            const match = pattern.exec(content);
+            if (match) {
+                data.prezzo = parseFloat(match[1].replace(',', '.'));
+                break;
+            }
+        }
+
+        // Extract dates
+        const datePatterns = [
+            /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/g,
+            /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/g
+        ];
+
+        const dates = [];
+        for (const pattern of datePatterns) {
+            let match;
+            while ((match = pattern.exec(content)) !== null) {
+                let dateStr;
+                if (match[1].length === 4) {
+                    dateStr = `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+                } else {
+                    dateStr = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+                }
+                dates.push(dateStr);
+            }
+        }
+
+        if (dates.length >= 2) {
+            dates.sort();
+            data.checkIn = dates[0];
+            data.checkOut = dates[1];
+        }
+
+        // Extract guests
+        const adultMatch = content.match(/adulti[:\s]*(\d+)/gi);
+        if (adultMatch) {
+            data.adults = parseInt(adultMatch[0].match(/\d+/)[0]);
+        }
+
+        const childMatch = content.match(/bambini[:\s]*(\d+)/gi);
+        if (childMatch) {
+            data.children = parseInt(childMatch[0].match(/\d+/)[0]);
+        }
+
+        // Extract services
+        data.servizi = this.extractServicesFromText(content);
+        data.note = 'Importato da email';
+        data.source = 'email';
+
+        return Object.keys(data).length > 1 ? data : null;
+    }
+
+    extractServicesFromText(text) {
+        const serviceKeywords = {
+            piscina: ['piscina', 'pool'],
+            miniClub: ['mini club', 'kids club', 'club bambini'],
+            animazione: ['animazione', 'entertainment'],
+            spiaggiaPrivata: ['spiaggia privata', 'private beach'],
+            parcheggio: ['parcheggio', 'parking'],
+            wifi: ['wifi', 'internet', 'connessione'],
+            spa: ['spa', 'centro benessere', 'wellness'],
+            ristorante: ['ristorante', 'restaurant'],
+            palestra: ['palestra', 'gym'],
+            navetta: ['navetta', 'shuttle']
+        };
+
+        const services = [];
+        const textLower = text.toLowerCase();
+
+        for (const [serviceKey, keywords] of Object.entries(serviceKeywords)) {
+            if (keywords.some(keyword => textLower.includes(keyword))) {
+                services.push(serviceKey);
+            }
+        }
+
+        return services;
+    }
+
+    fillFormWithParsedData(data) {
+        if (data.hotel) document.getElementById('hotel-name').value = data.hotel;
+        if (data.prezzo) document.getElementById('hotel-price').value = data.prezzo;
+        if (data.checkIn) document.getElementById('check-in').value = data.checkIn;
+        if (data.checkOut) document.getElementById('check-out').value = data.checkOut;
+        if (data.adults) document.getElementById('adults').value = data.adults;
+        if (data.children) document.getElementById('children').value = data.children;
+        if (data.note) document.getElementById('notes').value = data.note;
+
+        // Set services
+        if (data.servizi) {
+            document.querySelectorAll('input[name="service"]').forEach(checkbox => {
+                checkbox.checked = data.servizi.includes(checkbox.value);
+            });
+        }
+    }
+
+    // FILTER METHODS
+    applyFilters() {
+        const searchTerm = document.getElementById('search-filter')?.value.toLowerCase() || '';
+        const sortOption = document.getElementById('sort-filter')?.value || 'price-asc';
+
+        let filteredPreventivi = [...this.preventivi];
+
+        // Apply search filter
+        if (searchTerm) {
+            filteredPreventivi = filteredPreventivi.filter(p => 
+                p.hotel.toLowerCase().includes(searchTerm) ||
+                (p.note && p.note.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        // Apply sort
+        filteredPreventivi.sort((a, b) => {
+            switch (sortOption) {
+                case 'price-asc':
+                    return a.prezzo - b.prezzo;
+                case 'price-desc':
+                    return b.prezzo - a.prezzo;
+                case 'rating-desc':
+                    return this.calculateScore(b.servizi || []) - this.calculateScore(a.servizi || []);
+                case 'name-asc':
+                    return a.hotel.localeCompare(b.hotel);
+                default:
+                    return 0;
+            }
+        });
+
+        // Temporarily replace preventivi for rendering
+        const originalPreventivi = this.preventivi;
+        this.preventivi = filteredPreventivi;
+        this.renderTable();
+        this.preventivi = originalPreventivi;
+    }
+
+    // UTILITY METHODS
     isValidUrl(string) {
         try {
             new URL(string);
@@ -838,191 +1156,57 @@ class FamilyHotelManager {
         }
     }
 
-    parseHtmlForHotelData(html) {
-        const data = {
-            hotel: '',
-            checkIn: '',
-            checkOut: '',
-            price: 0,
-            location: '',
-            services: {}
-        };
-
-        // Create a temporary DOM to parse HTML
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        // Extract hotel name
-        let hotelName = '';
-        
-        // Try meta tags first
-        const ogTitle = doc.querySelector('meta[property="og:title"]');
-        if (ogTitle) hotelName = ogTitle.content;
-        
-        if (!hotelName) {
-            const metaTitle = doc.querySelector('meta[name="title"]');
-            if (metaTitle) hotelName = metaTitle.content;
-        }
-        
-        if (!hotelName) {
-            const titleTag = doc.querySelector('title');
-            if (titleTag) hotelName = titleTag.textContent;
-        }
-        
-        if (!hotelName) {
-            const h1 = doc.querySelector('h1');
-            if (h1) hotelName = h1.textContent;
-        }
-
-        // Clean hotel name
-        if (hotelName) {
-            hotelName = hotelName.trim()
-                .replace(/\s*[\|\-]\s*.*/g, '') // Remove everything after | or -
-                .replace(/booking\.com/gi, '')
-                .replace(/expedia/gi, '')
-                .replace(/hotels\.com/gi, '')
-                .trim();
-            data.hotel = hotelName;
-        }
-
-        // Extract price
-        const priceRegex = /€\s*(\d+(?:[.,]\d+)?)/;
-        const bodyText = doc.body ? doc.body.textContent : html;
-        const priceMatch = bodyText.match(priceRegex);
-        if (priceMatch) {
-            data.price = parseFloat(priceMatch[1].replace(',', '.'));
-        }
-
-        // Extract services based on keywords
-        const text = bodyText.toLowerCase();
-        const serviceKeywords = {
-            piscina: ['piscina', 'pool', 'swimming'],
-            miniClub: ['mini club', 'kids club', 'baby club'],
-            animazione: ['animazione', 'entertainment', 'animation'],
-            spiaggiaPrivata: ['spiaggia privata', 'private beach'],
-            parcheggio: ['parcheggio', 'parking', 'garage'],
-            wifi: ['wifi', 'wi-fi', 'internet gratuito'],
-            spa: ['spa', 'wellness', 'benessere'],
-            palestra: ['palestra', 'fitness', 'gym']
-        };
-
-        Object.keys(serviceKeywords).forEach(service => {
-            const keywords = serviceKeywords[service];
-            data.services[service] = keywords.some(keyword => text.includes(keyword));
-        });
-
-        return data;
+    formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('it-IT');
     }
 
-    showUrlPreview(data) {
-        const resultsSection = document.getElementById('url-results');
-        const previewDiv = document.getElementById('url-preview');
-        
-        if (!resultsSection || !previewDiv) return;
-
-        const servicesHtml = Object.keys(data.services)
-            .filter(key => data.services[key])
-            .map(service => {
-                const labels = {
-                    piscina: '🏊 Piscina',
-                    miniClub: '🎈 Mini Club',
-                    animazione: '🎭 Animazione',
-                    spiaggiaPrivata: '🏖️ Spiaggia Privata',
-                    parcheggio: '🚗 Parcheggio',
-                    wifi: '📶 WiFi',
-                    spa: '💆 SPA',
-                    palestra: '🏋️ Palestra'
-                };
-                return `<span class="service-tag">${labels[service] || service}</span>`;
-            })
-            .join('');
-
-        previewDiv.innerHTML = `
-            <div class="preview-grid">
-                <div class="preview-item">
-                    <h4>🏨 Hotel</h4>
-                    <p>${data.hotel || 'Non identificato'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>💰 Prezzo</h4>
-                    <p>${data.price ? `€${data.price}` : 'Non identificato'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>📍 Località</h4>
-                    <p>${data.location || 'Non identificata'}</p>
-                </div>
-                <div class="preview-item">
-                    <h4>🎯 Servizi Identificati</h4>
-                    <div class="service-tags">
-                        ${servicesHtml || '<span style="color: #666;">Nessun servizio identificato</span>'}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        this.currentUrlData = data;
-        resultsSection.style.display = 'block';
-    }
-
-    saveUrlData() {
-        if (!this.currentUrlData) return;
-
-        const preventivo = {
-            ...this.currentUrlData,
-            id: this.generateId(),
-            adults: 2,
-            children: 2,
-            email: '',
-            phone: '',
-            notes: 'Importato da URL',
-            source: 'url'
-        };
-
-        preventivo.score = this.calculateScore(preventivo);
-        preventivo.stars = this.calculateStars(preventivo.score);
-
-        this.preventivi.push(preventivo);
-        this.saveData();
-        this.updateDashboard();
-
-        document.getElementById('url-results').style.display = 'none';
-        document.getElementById('url-input').value = '';
-        
-        this.showToast('Preventivo salvato da URL!', 'success');
-        this.showSection('dashboard');
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     showToast(message, type = 'info') {
         const container = document.getElementById('toast-container');
-        if (!container) {
-            console.log('Toast:', type, message);
-            return;
-        }
+        if (!container) return;
 
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        toast.textContent = message;
+        
+        const iconMap = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+
+        toast.innerHTML = `
+            <span class="toast-icon">${iconMap[type] || 'ℹ️'}</span>
+            <span class="toast-message">${this.escapeHtml(message)}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
 
         container.appendChild(toast);
 
-        // Trigger animation
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
+        // Show toast
+        setTimeout(() => toast.classList.add('show'), 100);
 
-        // Remove after 4 seconds
+        // Auto-remove after 4 seconds
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => {
-                if (container.contains(toast)) {
-                    container.removeChild(toast);
+                if (toast.parentElement) {
+                    toast.parentElement.removeChild(toast);
                 }
             }, 300);
         }, 4000);
     }
 }
 
-// Initialize the app when DOM is loaded
+// Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.familyHotelManager = new FamilyHotelManager();
 });
+```
