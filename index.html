@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Hotel - Gestione Preventivi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <h1 class="header__title">🏨 Family Hotel Manager</h1>
+                <nav class="nav">
+                    <button class="nav__btn nav__btn--active" data-section="dashboard">Dashboard</button>
+                    <button class="nav__btn" data-section="add-quote">Aggiungi</button>
+                    <button class="nav__btn" data-section="import-email">Email</button>
+                    <button class="nav__btn" data-section="import-url">URL</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard" class="section section--active">
+                <div class="section__header">
+                    <h2>Dashboard Preventivi</h2>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <span class="stat-card__label">Preventivi Totali</span>
+                            <span class="stat-card__value" id="total-quotes">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card__label">Prezzo Medio</span>
+                            <span class="stat-card__value" id="avg-price">€0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-card__label">Miglior Valutazione</span>
+                            <span class="stat-card__value" id="best-rating">0⭐</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <div class="filter-group">
+                        <label class="form-label">Prezzo Min</label>
+                        <input type="number" class="form-control filter-input" id="price-min" placeholder="€0">
+                    </div>
+                    <div class="filter-group">
+                        <label class="form-label">Prezzo Max</label>
+                        <input type="number" class="form-control filter-input" id="price-max" placeholder="€5000">
+                    </div>
+                    <div class="filter-group">
+                        <label class="form-label">Valutazione Min</label>
+                        <select class="form-control filter-input" id="rating-filter">
+                            <option value="">Tutte</option>
+                            <option value="1">1+ stelle</option>
+                            <option value="2">2+ stelle</option>
+                            <option value="3">3+ stelle</option>
+                            <option value="4">4+ stelle</option>
+                            <option value="5">5 stelle</option>
+                        </select>
+                    </div>
+                    <button class="btn btn--secondary" id="reset-filters">Reset Filtri</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="quotes-table" id="quotes-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="nomeHotel">Nome Hotel</th>
+                                <th data-sort="dataCheckin">Date</th>
+                                <th data-sort="prezzoTotale">Prezzo</th>
+                                <th data-sort="stelle">Stelle</th>
+                                <th data-sort="localita">Località</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quotes-table-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="comparison-section" id="comparison-section" style="display: none;">
+                    <h3>Confronto Preventivi</h3>
+                    <div class="comparison-grid" id="comparison-grid"></div>
+                    <button class="btn btn--primary" id="clear-comparison">Pulisci Confronto</button>
+                </div>
+            </section>
+
+            <!-- ADD QUOTE SECTION -->
+            <section id="add-quote" class="section">
+                <div class="section__header">
+                    <h2>Aggiungi Preventivo</h2>
+                </div>
+
+                <form class="quote-form" id="quote-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nome Hotel *</label>
+                            <input type="text" class="form-control" id="hotel-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Località</label>
+                            <input type="text" class="form-control" id="location">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data Check-in *</label>
+                            <input type="date" class="form-control" id="checkin-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data Check-out *</label>
+                            <input type="date" class="form-control" id="checkout-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Prezzo Totale (€) *</label>
+                            <input type="number" class="form-control" id="total-price" required min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email/Telefono Hotel</label>
+                            <input type="text" class="form-control" id="hotel-contact">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Numero Adulti</label>
+                            <input type="number" class="form-control" id="adults" value="2" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Numero Bambini</label>
+                            <input type="number" class="form-control" id="children" value="2" min="0">
+                        </div>
+                        <div class="form-group form-group--full">
+                            <label class="form-label">Età Bambini</label>
+                            <input type="text" class="form-control" id="children-ages" value="7, 4 anni">
+                        </div>
+                    </div>
+
+                    <div class="services-section">
+                        <h3>Servizi Disponibili</h3>
+                        
+                        <div class="service-category">
+                            <h4>🎯 Alta Priorità (10 punti)</h4>
+                            <div class="services-grid" id="high-priority-services"></div>
+                        </div>
+
+                        <div class="service-category">
+                            <h4>⭐ Media Priorità (6 punti)</h4>
+                            <div class="services-grid" id="medium-priority-services"></div>
+                        </div>
+
+                        <div class="service-category">
+                            <h4>📌 Bassa Priorità (3 punti)</h4>
+                            <div class="services-grid" id="low-priority-services"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Note Aggiuntive</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+
+                    <div class="score-display" id="score-display">
+                        <div class="score-info">
+                            <span>Punteggio: <strong id="current-score">0</strong>/198</span>
+                            <span>Stelle: <strong id="current-stars">☆☆☆☆☆</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn--secondary" id="calculate-score">Calcola Punteggio</button>
+                        <button type="button" class="btn btn--outline" id="reset-form">Reset</button>
+                        <button type="submit" class="btn btn--primary">Salva Preventivo</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- IMPORT EMAIL SECTION -->
+            <section id="import-email" class="section">
+                <div class="section__header">
+                    <h2>Importa da Email</h2>
+                    <p>Incolla il contenuto dell'email del preventivo per estrarre automaticamente i dati</p>
+                </div>
+
+                <div class="email-instructions">
+                    <h3>📧 Come Configurare l'Estrazione Email</h3>
+                    <ol>
+                        <li>Usa servizi come <a href="https://parseur.com" target="_blank">Parseur</a> o <a href="https://mailparser.io" target="_blank">Mailparser</a></li>
+                        <li>Configura template per estrarre: nome hotel, date, prezzi, servizi</li>
+                        <li>Inoltra email preventivi al parser configurato</li>
+                        <li>Copia e incolla il contenuto qui sotto</li>
+                    </ol>
+                </div>
+
+                <div class="email-import-form">
+                    <div class="form-group">
+                        <label class="form-label">Contenuto Email</label>
+                        <textarea class="form-control" id="email-content" rows="10" placeholder="Incolla qui il contenuto dell'email del preventivo..."></textarea>
+                    </div>
+                    <button class="btn btn--primary" id="extract-email-data">Estrai Dati Automaticamente</button>
+                </div>
+
+                <div class="extracted-data-preview" id="email-preview" style="display: none;">
+                    <h3>Preview Dati Estratti</h3>
+                    <div class="preview-content" id="email-preview-content"></div>
+                    <div class="preview-actions">
+                        <button class="btn btn--secondary" id="edit-email-data">Modifica</button>
+                        <button class="btn btn--primary" id="save-email-data">Salva Preventivo</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- IMPORT URL SECTION -->
+            <section id="import-url" class="section">
+                <div class="section__header">
+                    <h2>Importa da URL</h2>
+                    <p>Inserisci il link del preventivo per estrarre automaticamente i dati</p>
+                </div>
+
+                <div class="supported-sites">
+                    <h3>🌐 Siti Supportati</h3>
+                    <div class="site-tags">
+                        <span class="tag">Booking.com</span>
+                        <span class="tag">Hotels.com</span>
+                        <span class="tag">Expedia</span>
+                        <span class="tag">Trivago</span>
+                        <span class="tag">Siti hotel diretti</span>
+                    </div>
+                </div>
+
+                <div class="url-import-form">
+                    <div class="form-group">
+                        <label class="form-label">URL Preventivo</label>
+                        <input type="url" class="form-control" id="quote-url" placeholder="https://...">
+                    </div>
+                    <button class="btn btn--primary" id="extract-url-data">
+                        <span id="extract-btn-text">Estrai Dati da URL</span>
+                        <span id="extract-loading" style="display: none;">⏳ Estrazione in corso...</span>
+                    </button>
+                </div>
+
+                <div class="extracted-data-preview" id="url-preview" style="display: none;">
+                    <h3>Preview Dati Estratti</h3>
+                    <div class="preview-content" id="url-preview-content"></div>
+                    <div class="preview-actions">
+                        <button class="btn btn--secondary" id="edit-url-data">Modifica</button>
+                        <button class="btn btn--primary" id="save-url-data">Salva Preventivo</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
