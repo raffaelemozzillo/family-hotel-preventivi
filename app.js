@@ -986,8 +986,6 @@ class FamilyHotelManager {
         return `${day}/${month}/${year}`;
     }
 
-        this.showToast('Funzionalità URL in sviluppo - usa il form manuale', 'info');
-    }
 
     populateFormWithExtractedData(data) {
         // Popolamento dati di base
