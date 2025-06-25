@@ -1,4 +1,3 @@
-# Family Hotel Manager - JavaScript Aggiornato 2025
 
 class FamilyHotelManager {
   constructor() {
