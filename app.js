@@ -253,6 +253,20 @@ class FamilyHotelManager {
                 }
             });
         }
+
+        const editUrlBtn = document.getElementById('edit-url-data');
+        if (editUrlBtn) {
+            editUrlBtn.addEventListener('click', () => {
+                if (this.tempExtractedData) {
+                    this.populateFormWithExtractedData(this.tempExtractedData);
+                    this.showSection('add-quote');
+                    document.getElementById('url-preview').style.display = 'none';
+                    this.showToast('Dati trasferiti nel form per modifica', 'info');
+                } else {
+                    this.showToast('Nessun dato da modificare', 'warning');
+                }
+            });
+        }
     }
 
     showSection(sectionId) {
@@ -718,13 +732,383 @@ class FamilyHotelManager {
             return;
         }
 
+        // Validazione URL
+        try {
+            new URL(url);
+        } catch (e) {
+            this.showToast('URL non valido. Assicurati che inizi con http:// o https://', 'error');
+            return;
+        }
+
+        // Mostra indicatore di caricamento
+        const button = document.querySelector('#extract-url-data');
+        const originalText = button.textContent;
+        button.textContent = 'Estrazione in corso...';
+        button.disabled = true;
+
+        // Lista di proxy CORS con fallback
+        const corsProxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://cors-anywhere.herokuapp.com/',
+            'https://thingproxy.freeboard.io/fetch/',
+            'https://cors-proxy.htmldriven.com/?url=',
+            'https://yacdn.org/proxy/'
+        ];
+
+        try {
+            let extractedData = null;
+            let proxyUsed = null;
+
+            // Tentativo con ogni proxy
+            for (let i = 0; i < corsProxies.length; i++) {
+                const proxy = corsProxies[i];
+                try {
+                    this.showToast(`Tentativo ${i + 1}/${corsProxies.length}: ${proxy.split('/')[2]}...`, 'info');
+
+                    const response = await fetch(proxy + encodeURIComponent(url), {
+                        method: 'GET',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const html = await response.text();
+                        extractedData = this.parseHtmlForHotelData(html, url);
+                        proxyUsed = proxy;
+                        break;
+                    }
+                } catch (proxyError) {
+                    console.log(`Proxy ${proxy} fallito:`, proxyError);
+                    continue;
+                }
+            }
+
+            if (extractedData) {
+                this.showToast(`Dati estratti con successo! Proxy usato: ${proxyUsed.split('/')[2]}`, 'success');
+                this.populateFormWithExtractedData(extractedData);
+            } else {
+                this.showToast('Impossibile estrarre dati da questo URL. Verifica che sia accessibile pubblicamente.', 'error');
+            }
+        } catch (error) {
+            console.error('Errore nell\'estrazione URL:', error);
+            this.showToast('Errore nell\'estrazione dati. Riprova o usa il form manuale.', 'error');
+        } finally {
+            // Ripristina il button
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    }
+
+    // Funzione per parsare HTML e estrarre dati hotel
+    parseHtmlForHotelData(html, url) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        const extractedData = {
+            nomeHotel: '',
+            prezzoTotale: '',
+            dataArrivo: '',
+            dataPartenza: '',
+            servizi: {},
+            fonte: url,
+            note: 'Estratto automaticamente da URL'
+        };
+
+        // Estrazione nome hotel con priorità
+        const hotelSelectors = [
+            'meta[property="og:title"]',
+            'meta[name="twitter:title"]',
+            'meta[name="description"]',
+            'title',
+            'h1',
+            'h2',
+            '.hotel-name',
+            '.property-name',
+            '[class*="hotel"]',
+            '[class*="property"]'
+        ];
+
+        for (const selector of hotelSelectors) {
+            const element = doc.querySelector(selector);
+            if (element) {
+                let hotelName = '';
+                if (element.tagName === 'META') {
+                    hotelName = element.getAttribute('content') || '';
+                } else {
+                    hotelName = element.textContent || '';
+                }
+
+                // Pulire il nome dell'hotel
+                hotelName = hotelName.trim()
+                    .replace(/\s+/g, ' ')
+                    .replace(/[\n\r\t]/g, ' ')
+                    .replace(/\s*-\s*Booking\.com.*$/i, '')
+                    .replace(/\s*-\s*Expedia.*$/i, '')
+                    .replace(/\s*-\s*Hotels\.com.*$/i, '')
+                    .replace(/\s*\|.*$/i, '')
+                    .substring(0, 100);
+
+                if (hotelName.length > 5) {
+                    extractedData.nomeHotel = hotelName;
+                    break;
+                }
+            }
+        }
+
+        // Estrazione prezzi
+        const pricePatterns = [
+            /€\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/g,
+            /EUR\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/g,
+            /([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)\s*€/g,
+            /([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)\s*EUR/g
+        ];
+
+        const bodyText = doc.body ? doc.body.textContent : html;
+        let maxPrice = 0;
+
+        for (const pattern of pricePatterns) {
+            let match;
+            while ((match = pattern.exec(bodyText)) !== null) {
+                const priceStr = match[1] || match[0];
+                const price = parseFloat(priceStr.replace(/[^0-9.,]/g, '').replace(',', '.'));
+                if (price > 50 && price < 10000 && price > maxPrice) {
+                    maxPrice = price;
+                }
+            }
+        }
+
+        if (maxPrice > 0) {
+            extractedData.prezzoTotale = maxPrice.toString();
+        }
+
+        // Estrazione date
+        const datePatterns = [
+            /([0-9]{1,2})[\/-]([0-9]{1,2})[\/-]([0-9]{4})/g,
+            /([0-9]{4})[\/-]([0-9]{1,2})[\/-]([0-9]{1,2})/g,
+            /([0-9]{1,2})\s+(gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic)\w*\s+([0-9]{4})/gi
+        ];
+
+        const dates = [];
+        for (const pattern of datePatterns) {
+            let match;
+            while ((match = pattern.exec(bodyText)) !== null) {
+                const dateStr = match[0];
+                const date = this.parseItalianDate(dateStr);
+                if (date && date.getFullYear() >= 2024) {
+                    dates.push(date);
+                }
+            }
+        }
+
+        if (dates.length >= 2) {
+            dates.sort((a, b) => a - b);
+            extractedData.dataArrivo = this.formatDate(dates[0]);
+            extractedData.dataPartenza = this.formatDate(dates[1]);
+        }
+
+        // Estrazione servizi
+        const serviceKeywords = {
+            piscinaBambini: ['piscina bambini', 'piscina per bambini', 'kids pool', 'children pool'],
+            miniClub: ['mini club', 'kids club', 'baby club', 'animazione bambini'],
+            animazione: ['animazione', 'animation', 'entertainment', 'spettacoli'],
+            spiaggiaPrivata: ['spiaggia privata', 'private beach', 'spiaggia attrezzata'],
+            menuBambini: ['menu bambini', 'kids menu', 'menu per bambini'],
+            parcheggio: ['parcheggio', 'parking', 'garage'],
+            wifi: ['wifi', 'wi-fi', 'internet gratuito', 'free wifi'],
+            allInclusive: ['all inclusive', 'tutto incluso', 'all-inclusive'],
+            spa: ['spa', 'wellness', 'benessere', 'centro benessere'],
+            ristorante: ['ristorante', 'restaurant', 'dining']
+        };
+
+        const lowerBodyText = bodyText.toLowerCase();
+        for (const [serviceKey, keywords] of Object.entries(serviceKeywords)) {
+            for (const keyword of keywords) {
+                if (lowerBodyText.includes(keyword.toLowerCase())) {
+                    extractedData.servizi[serviceKey] = true;
+                    break;
+                }
+            }
+        }
+
+        return extractedData;
+    }
+
+    // Funzione helper per parsare date italiane
+    parseItalianDate(dateStr) {
+        const monthNames = {
+            'gen': 0, 'gennaio': 0,
+            'feb': 1, 'febbraio': 1,
+            'mar': 2, 'marzo': 2,
+            'apr': 3, 'aprile': 3,
+            'mag': 4, 'maggio': 4,
+            'giu': 5, 'giugno': 5,
+            'lug': 6, 'luglio': 6,
+            'ago': 7, 'agosto': 7,
+            'set': 8, 'settembre': 8,
+            'ott': 9, 'ottobre': 9,
+            'nov': 10, 'novembre': 10,
+            'dic': 11, 'dicembre': 11
+        };
+
+        // Formato DD/MM/YYYY o DD-MM-YYYY
+        const ddmmyyyy = dateStr.match(/([0-9]{1,2})[\/-]([0-9]{1,2})[\/-]([0-9]{4})/);
+        if (ddmmyyyy) {
+            const day = parseInt(ddmmyyyy[1]);
+            const month = parseInt(ddmmyyyy[2]) - 1;
+            const year = parseInt(ddmmyyyy[3]);
+            return new Date(year, month, day);
+        }
+
+        // Formato con nome del mese
+        const namedMonth = dateStr.match(/([0-9]{1,2})\s+(\w+)\s+([0-9]{4})/i);
+        if (namedMonth) {
+            const day = parseInt(namedMonth[1]);
+            const monthName = namedMonth[2].toLowerCase();
+            const year = parseInt(namedMonth[3]);
+
+            for (const [name, monthIndex] of Object.entries(monthNames)) {
+                if (monthName.startsWith(name)) {
+                    return new Date(year, monthIndex, day);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // Funzione helper per formattare date
+    formatDate(date) {
+        if (!date) return '';
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
         this.showToast('Funzionalità URL in sviluppo - usa il form manuale', 'info');
     }
 
     populateFormWithExtractedData(data) {
+        // Popolamento dati di base
         if (data.nomeHotel) document.getElementById('hotel-name').value = data.nomeHotel;
         if (data.prezzoTotale) document.getElementById('total-price').value = data.prezzoTotale;
-        this.showToast('Dati importati nel form', 'success');
+        if (data.dataArrivo) document.getElementById('checkin-date').value = this.convertDateFormat(data.dataArrivo);
+        if (data.dataPartenza) document.getElementById('checkout-date').value = this.convertDateFormat(data.dataPartenza);
+        if (data.note) document.getElementById('notes').value = data.note;
+        if (data.fonte) document.getElementById('source').value = data.fonte;
+
+        // Popolamento servizi
+        if (data.servizi) {
+            // Reset tutti i checkbox dei servizi
+            const allServiceCheckboxes = document.querySelectorAll('input[type="checkbox"][id$="-service"]');
+            allServiceCheckboxes.forEach(checkbox => checkbox.checked = false);
+
+            // Imposta i servizi estratti
+            for (const [serviceKey, value] of Object.entries(data.servizi)) {
+                if (value === true) {
+                    const checkbox = document.getElementById(serviceKey + '-service') || 
+                                   document.getElementById(serviceKey) ||
+                                   document.querySelector(`input[name="${serviceKey}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                }
+            }
+        }
+
+        // Mostra anteprima dei dati estratti nella sezione URL
+        this.showUrlPreview(data);
+
+        this.showToast('Dati estratti e popolati con successo!', 'success');
+    }
+
+    // Funzione helper per convertire formato date
+    convertDateFormat(dateStr) {
+        if (!dateStr) return '';
+
+        // Se è già in formato YYYY-MM-DD, mantienilo
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return dateStr;
+        }
+
+        // Converte da DD/MM/YYYY a YYYY-MM-DD per input type="date"
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        return dateStr;
+    }
+
+    // Funzione per mostrare anteprima dati estratti
+    showUrlPreview(data) {
+        const preview = document.getElementById('url-preview');
+        const previewContent = document.getElementById('url-preview-content');
+
+        if (!preview || !previewContent) return;
+
+        let previewHtml = '<div class="preview-grid">';
+
+        if (data.nomeHotel) {
+            previewHtml += `<div class="preview-item">
+                <strong>Hotel:</strong> ${data.nomeHotel}
+            </div>`;
+        }
+
+        if (data.prezzoTotale) {
+            previewHtml += `<div class="preview-item">
+                <strong>Prezzo:</strong> €${data.prezzoTotale}
+            </div>`;
+        }
+
+        if (data.dataArrivo && data.dataPartenza) {
+            previewHtml += `<div class="preview-item">
+                <strong>Date:</strong> ${data.dataArrivo} - ${data.dataPartenza}
+            </div>`;
+        }
+
+        if (data.servizi && Object.keys(data.servizi).length > 0) {
+            const servicesFound = Object.keys(data.servizi).filter(key => data.servizi[key]);
+            previewHtml += `<div class="preview-item">
+                <strong>Servizi trovati:</strong> ${servicesFound.length}
+                <div class="services-tags">
+                    ${servicesFound.map(service => `<span class="service-tag">${this.getServiceLabel(service)}</span>`).join('')}
+                </div>
+            </div>`;
+        }
+
+        if (data.fonte) {
+            previewHtml += `<div class="preview-item">
+                <strong>Fonte:</strong> <a href="${data.fonte}" target="_blank" rel="noopener">${new URL(data.fonte).hostname}</a>
+            </div>`;
+        }
+
+        previewHtml += '</div>';
+
+        previewContent.innerHTML = previewHtml;
+        preview.style.display = 'block';
+
+        // Store data per uso successivo
+        this.tempExtractedData = data;
+    }
+
+    // Funzione helper per ottenere label del servizio
+    getServiceLabel(serviceKey) {
+        const serviceLabels = {
+            piscinaBambini: 'Piscina Bambini',
+            miniClub: 'Mini Club',
+            animazione: 'Animazione',
+            spiaggiaPrivata: 'Spiaggia Privata',
+            menuBambini: 'Menu Bambini',
+            parcheggio: 'Parcheggio',
+            wifi: 'WiFi',
+            allInclusive: 'All Inclusive',
+            spa: 'SPA',
+            ristorante: 'Ristorante'
+        };
+        return serviceLabels[serviceKey] || serviceKey;
     }
 
     // Storage methods
