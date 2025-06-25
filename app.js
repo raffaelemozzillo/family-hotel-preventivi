@@ -8,7 +8,7 @@ class FamilyHotelManager {
                 { nome: "piscinaBambini", label: "Piscina per bambini", peso: 10 },
                 { nome: "miniClub", label: "Mini Club 4-7 anni", peso: 10 },
                 { nome: "animazione", label: "Animazione", peso: 10 },
-                { nome: "spiaggiaPr ivata", label: "Spiaggia privata", peso: 10 },
+                { nome: "spiaggiaPrivata", label: "Spiaggia privata", peso: 10 },
                 { nome: "menuBambini", label: "Menu bambini", peso: 10 },
                 { nome: "babySitting", label: "Baby sitting", peso: 10 },
                 { nome: "parcheggio", label: "Parcheggio", peso: 10 },
@@ -80,7 +80,7 @@ class FamilyHotelManager {
                         piscinaBambini: true,
                         miniClub: true,
                         animazione: true,
-                        spiaggiaPr ivata: true,
+                        spiaggiaPrivata: true,
                         menuBambini: true,
                         parcheggio: true,
                         wifi: true
@@ -121,7 +121,7 @@ class FamilyHotelManager {
                     localita: "Jesolo",
                     emailTelefono: "info@residenceluna.it",
                     servizi: {
-                        spiaggiaPr ivata: true,
+                        spiaggiaPrivata: true,
                         parcheggio: true,
                         wifi: true
                     },
