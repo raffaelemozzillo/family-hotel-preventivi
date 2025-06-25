@@ -1303,3 +1303,119 @@ select.form-control {
     background-color: transparent;
   }
 }
+
+/* Stili per la nuova interfaccia URL */
+.preview-grid {
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.preview-item {
+    padding: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.preview-item strong {
+    color: var(--color-primary);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.services-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.service-tag {
+    background: var(--color-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.supported-sites {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.supported-sites h3 {
+    margin: 0 0 0.75rem 0;
+    color: var(--color-text);
+    font-size: 1.1rem;
+}
+
+.site-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    background: var(--color-secondary);
+    color: var(--color-text);
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--color-border);
+}
+
+.url-import-form {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.extracted-data-preview {
+    background: var(--color-surface);
+    border: 1px solid var(--color-success);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.extracted-data-preview h3 {
+    margin: 0 0 1rem 0;
+    color: var(--color-success);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.extracted-data-preview h3::before {
+    content: "✅";
+}
+
+.preview-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 768px) {
+    .preview-actions {
+        flex-direction: column;
+    }
+
+    .site-tags {
+        flex-direction: column;
+    }
+
+    .services-tags {
+        flex-direction: column;
+    }
+}
