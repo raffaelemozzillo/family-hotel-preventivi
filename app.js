@@ -1,6 +1,5 @@
 # Family Hotel Manager - JavaScript Aggiornato 2025
 
-```javascript
 class FamilyHotelManager {
   constructor() {
     this.preventivi = [];
@@ -623,4 +622,3 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, initializing app');
   window.familyHotelManager = new FamilyHotelManager();
 });
-```
