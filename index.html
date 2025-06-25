@@ -3,236 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Hotel Manager</title>
+    <title>Family Hotel Manager - Gestione Preventivi</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>Family Hotel Manager</h1>
-            <p>Gestisci e confronta i preventivi per la tua vacanza famiglia</p>
+        <header>
+            <h1>🏨 Family Hotel Manager</h1>
+            <p>Gestione completa preventivi per vacanze in famiglia</p>
         </header>
 
-        <nav class="nav">
-            <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
-            <button class="nav-btn" data-section="aggiungi">➕ Aggiungi</button>
-            <button class="nav-btn" data-section="import-email">📧 Importa Email</button>
-            <button class="nav-btn" data-section="import-url">🔗 Importa da URL</button>
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-section="dashboard">📊 Dashboard</button>
+            <button class="nav-tab" data-section="add">➕ Aggiungi</button>
+            <button class="nav-tab" data-section="import-email">📧 Importa Email</button>
+            <button class="nav-tab" data-section="import-url">🔗 Importa da URL</button>
         </nav>
 
-        <main class="main">
-            <!-- Dashboard Section -->
-            <section id="dashboard" class="section active">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Preventivi Totali</h3>
-                        <span class="stat-number" id="total-preventivi">0</span>
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <h2>Dashboard Preventivi</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Preventivi Totali</h3>
+                    <span class="stat-number" id="total-quotes">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Prezzo Medio</h3>
+                    <span class="stat-number" id="avg-price">€0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Miglior Valutazione</h3>
+                    <span class="stat-number" id="best-rating">0★</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Risparmio Massimo</h3>
+                    <span class="stat-number" id="max-savings">€0</span>
+                </div>
+            </div>
+
+            <div class="filters">
+                <input type="text" id="search-filter" placeholder="🔍 Cerca hotel...">
+                <select id="price-filter">
+                    <option value="">Tutti i prezzi</option>
+                    <option value="low">€0 - €800</option>
+                    <option value="medium">€800 - €1500</option>
+                    <option value="high">€1500+</option>
+                </select>
+                <select id="rating-filter">
+                    <option value="">Tutte le valutazioni</option>
+                    <option value="5">5 stelle</option>
+                    <option value="4">4+ stelle</option>
+                    <option value="3">3+ stelle</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Hotel</th>
+                            <th>Prezzo</th>
+                            <th>Date</th>
+                            <th>Valutazione</th>
+                            <th>Servizi</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quotes-table">
+                        <!-- I preventivi verranno inseriti qui dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Add Section -->
+        <section id="add" class="section">
+            <h2 id="form-title">Aggiungi Nuovo Preventivo</h2>
+            <form id="quote-form" class="quote-form">
+                <input type="hidden" id="current-edit-id" value="">
+                
+                <div class="form-group">
+                    <label for="hotel">🏨 Nome Hotel *</label>
+                    <input type="text" id="hotel" name="hotel" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="check-in">📅 Check-in *</label>
+                        <input type="date" id="check-in" name="checkIn" required>
                     </div>
-                    <div class="stat-card">
-                        <h3>Prezzo Medio</h3>
-                        <span class="stat-number" id="prezzo-medio">€0</span>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Migliore Punteggio</h3>
-                        <span class="stat-number" id="migliore-punteggio">0</span>
+                    <div class="form-group">
+                        <label for="check-out">📅 Check-out *</label>
+                        <input type="date" id="check-out" name="checkOut" required>
                     </div>
                 </div>
 
-                <div class="preventivi-container">
-                    <h2>I Tuoi Preventivi</h2>
-                    <div class="preventivi-grid" id="preventivi-grid">
-                        <!-- Preventivi will be rendered here -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adults">👥 Adulti *</label>
+                        <input type="number" id="adults" name="adults" min="1" max="10" value="2" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="children">👶 Bambini *</label>
+                        <input type="number" id="children" name="children" min="0" max="10" value="2" required>
                     </div>
                 </div>
-            </section>
 
-            <!-- Aggiungi Section -->
-            <section id="aggiungi" class="section">
-                <div class="card">
-                    <div class="card__header">
-                        <h2>Aggiungi Preventivo Manualmente</h2>
+                <div class="form-group">
+                    <label for="price">💰 Prezzo Totale *</label>
+                    <input type="number" id="price" name="price" min="0" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">📍 Località</label>
+                    <input type="text" id="location" name="location">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">📧 Email Hotel</label>
+                    <input type="email" id="email" name="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">📞 Telefono</label>
+                    <input type="tel" id="phone" name="phone">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">📝 Note</label>
+                    <textarea id="notes" name="notes" rows="3"></textarea>
+                </div>
+
+                <h3>Servizi Disponibili</h3>
+                <div class="services-grid">
+                    <!-- Servizi alta priorità -->
+                    <div class="service-item">
+                        <input type="checkbox" id="piscina" name="piscina">
+                        <label for="piscina">🏊 Piscina</label>
                     </div>
-                    <div class="card__body">
-                        <form id="manual-form" class="form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label" for="nome-hotel">Nome Hotel</label>
-                                    <input type="text" id="nome-hotel" name="nome" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="stelle">Stelle</label>
-                                    <select id="stelle" name="stelle" class="form-control">
-                                        <option value="3">3 stelle</option>
-                                        <option value="4">4 stelle</option>
-                                        <option value="5">5 stelle</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label" for="check-in">Check-in</label>
-                                    <input type="date" id="check-in" name="checkIn" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="check-out">Check-out</label>
-                                    <input type="date" id="check-out" name="checkOut" class="form-control" required>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label" for="adulti">Adulti</label>
-                                    <input type="number" id="adulti" name="adulti" class="form-control" min="1" max="10" value="2" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="bambini">Bambini</label>
-                                    <input type="number" id="bambini" name="bambini" class="form-control" min="0" max="10" value="2" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label" for="prezzo-totale">Prezzo Totale (€)</label>
-                                    <input type="number" id="prezzo-totale" name="prezzoTotale" class="form-control" min="0" step="0.01" required>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Servizi</label>
-                                <div class="services-grid" id="services-grid">
-                                    <!-- Services checkboxes will be rendered here -->
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label" for="note">Note</label>
-                                <textarea id="note" name="note" class="form-control" rows="3" placeholder="Aggiungi note aggiuntive..."></textarea>
-                            </div>
-
-                            <button type="submit" class="btn btn--primary btn--full-width">Aggiungi Preventivo</button>
-                        </form>
+                    <div class="service-item">
+                        <input type="checkbox" id="miniClub" name="miniClub">
+                        <label for="miniClub">🎈 Mini Club</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="animazione" name="animazione">
+                        <label for="animazione">🎭 Animazione</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="spiaggiaPrivata" name="spiaggiaPrivata">
+                        <label for="spiaggiaPrivata">🏖️ Spiaggia Privata</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="parcheggio" name="parcheggio">
+                        <label for="parcheggio">🚗 Parcheggio</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="wifi" name="wifi">
+                        <label for="wifi">📶 WiFi</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="allInclusive" name="allInclusive">
+                        <label for="allInclusive">🍽️ All Inclusive</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="spa" name="spa">
+                        <label for="spa">💆 SPA</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="palestrina" name="palestrina">
+                        <label for="palestrina">🏋️ Palestra</label>
+                    </div>
+                    <div class="service-item">
+                        <input type="checkbox" id="ariaCondizionata" name="ariaCondizionata">
+                        <label for="ariaCondizionata">❄️ Aria Condizionata</label>
                     </div>
                 </div>
-            </section>
 
-            <!-- Import Email Section -->
-            <section id="import-email" class="section">
-                <div class="card">
-                    <div class="card__header">
-                        <h2>Importa da Email</h2>
-                        <p>Copia e incolla il contenuto dell'email con il preventivo</p>
+                <button type="submit" class="btn btn-primary" id="submit-btn">Aggiungi Preventivo</button>
+                <button type="button" class="btn btn-secondary" id="cancel-edit-btn" style="display:none;">Annulla Modifica</button>
+            </form>
+        </section>
+
+        <!-- Import Email Section -->
+        <section id="import-email" class="section">
+            <h2>Importa da Email</h2>
+            <div class="import-info">
+                <p>💡 Carica o incolla il contenuto delle email con i preventivi per l'elaborazione automatica.</p>
+            </div>
+
+            <div class="import-methods">
+                <div class="method-card">
+                    <h3>📂 Carica File Email</h3>
+                    <input type="file" id="email-file" accept=".eml,.msg,.txt" multiple>
+                    <button id="process-files" class="btn btn-primary">Elabora File</button>
+                </div>
+
+                <div class="method-card">
+                    <h3>📋 Incolla Contenuto Email</h3>
+                    <textarea id="email-content" placeholder="Incolla qui il contenuto della email con il preventivo..." rows="10"></textarea>
+                    <button id="process-email" class="btn btn-primary">Elabora Email</button>
+                </div>
+            </div>
+
+            <div id="email-results" class="results-section" style="display:none;">
+                <h3>Dati Estratti</h3>
+                <div id="email-preview"></div>
+                <button id="save-email-data" class="btn btn-success">Salva Preventivo</button>
+            </div>
+        </section>
+
+        <!-- Import URL Section -->
+        <section id="import-url" class="section">
+            <h2>Importa da URL</h2>
+            <div class="import-info">
+                <p>🔗 Inserisci il link del preventivo per estrarre automaticamente i dati.</p>
+            </div>
+
+            <div class="url-import">
+                <div class="form-group">
+                    <label for="url-input">🌐 URL del Preventivo</label>
+                    <input type="url" id="url-input" placeholder="https://booking.com/hotel/preventivo..." required>
+                </div>
+                <button id="extract-url" class="btn btn-primary">Estrai Dati</button>
+            </div>
+
+            <div id="url-results" class="results-section" style="display:none;">
+                <h3>Anteprima Dati Estratti</h3>
+                <div id="url-preview"></div>
+                <button id="save-url-data" class="btn btn-success">Salva Preventivo</button>
+            </div>
+        </section>
+
+        <!-- Modal di Conferma Eliminazione -->
+        <div id="delete-modal" class="modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Conferma Eliminazione</h5>
+                        <button type="button" class="close-modal">&times;</button>
                     </div>
-                    <div class="card__body">
-                        <form id="email-form" class="form">
-                            <div class="form-group">
-                                <label class="form-label" for="email-content">Contenuto Email</label>
-                                <textarea id="email-content" class="form-control" rows="10" placeholder="Incolla qui il contenuto dell'email del preventivo..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--full-width">Estrai Dati</button>
-                        </form>
+                    <div class="modal-body">
+                        <p>Sei sicuro di voler eliminare questo preventivo?</p>
+                        <p class="hotel-name-to-delete"></p>
+                        <p class="warning-text">⚠️ Questa operazione non può essere annullata.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-modal">Annulla</button>
+                        <button type="button" class="btn btn-danger confirm-delete">Elimina</button>
                     </div>
                 </div>
-            </section>
+            </div>
+        </div>
 
-            <!-- Import URL Section -->
-            <section id="import-url" class="section">
-                <div class="card">
-                    <div class="card__header">
-                        <h2>Importa da URL</h2>
-                        <p>Inserisci il link del preventivo per l'estrazione automatica</p>
-                    </div>
-                    <div class="card__body">
-                        <form id="url-form" class="form">
-                            <div class="form-group">
-                                <label class="form-label" for="preventivo-url">URL Preventivo</label>
-                                <input type="url" id="preventivo-url" class="form-control" placeholder="https://example.com/preventivo/123" required>
-                            </div>
-                            <button type="submit" class="btn btn--primary btn--full-width" id="extract-btn">Estrai Dati</button>
-                        </form>
-
-                        <div id="extraction-progress" class="progress-container hidden">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progress-fill"></div>
-                            </div>
-                            <p class="progress-text" id="progress-text">Inizializzazione...</p>
-                        </div>
-
-                        <div id="extracted-preview" class="preview-container hidden">
-                            <h3>Anteprima Dati Estratti</h3>
-                            <div class="preview-content" id="preview-content">
-                                <!-- Extracted data preview will be shown here -->
-                            </div>
-                            <div class="preview-actions">
-                                <button type="button" class="btn btn--primary" id="confirm-extraction">Conferma e Aggiungi</button>
-                                <button type="button" class="btn btn--secondary" id="edit-extraction">Modifica</button>
-                            </div>
-                        </div>
-
-                        <!-- Form popolato con dati estratti -->
-                        <div id="extracted-form" class="hidden">
-                            <h3>Conferma Dati Estratti</h3>
-                            <form id="extracted-data-form" class="form">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-nome">Nome Hotel</label>
-                                        <input type="text" id="extracted-nome" name="nome" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-stelle">Stelle</label>
-                                        <select id="extracted-stelle" name="stelle" class="form-control">
-                                            <option value="3">3 stelle</option>
-                                            <option value="4">4 stelle</option>
-                                            <option value="5">5 stelle</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-check-in">Check-in</label>
-                                        <input type="date" id="extracted-check-in" name="checkIn" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-check-out">Check-out</label>
-                                        <input type="date" id="extracted-check-out" name="checkOut" class="form-control">
-                                    </div>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-adulti">Adulti</label>
-                                        <input type="number" id="extracted-adulti" name="adulti" class="form-control" min="1" max="10">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-bambini">Bambini</label>
-                                        <input type="number" id="extracted-bambini" name="bambini" class="form-control" min="0" max="10">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="extracted-prezzo">Prezzo Totale (€)</label>
-                                        <input type="number" id="extracted-prezzo" name="prezzoTotale" class="form-control" min="0" step="0.01">
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Servizi</label>
-                                    <div class="services-grid" id="extracted-services-grid">
-                                        <!-- Services checkboxes will be rendered here -->
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label" for="extracted-note">Note</label>
-                                    <textarea id="extracted-note" name="note" class="form-control" rows="3"></textarea>
-                                </div>
-
-                                <button type="submit" class="btn btn--primary btn--full-width">Conferma e Aggiungi</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Toast notification container -->
-        <div id="toast-container" class="toast-container"></div>
+        <!-- Toast Container -->
+        <div id="toast-container"></div>
     </div>
 
     <script src="app.js"></script>
