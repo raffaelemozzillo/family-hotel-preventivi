@@ -207,7 +207,7 @@ class FamilyHotelManager {
     });
     
     // URL Import
-    document.getElementById('import-url-btn').addEventListener('click', () => {
+    document.getElementById('importUrlBtn').addEventListener('click', () => {
       this.extractUrlData();
     });
     
@@ -223,7 +223,7 @@ class FamilyHotelManager {
     });
     
     // Pulsante annulla modifica
-    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
       this.resetForm();
       this.showSection('dashboard');
     });
@@ -407,7 +407,7 @@ class FamilyHotelManager {
     document.getElementById('edit-id').value = '';
     document.getElementById('submit-btn').textContent = 'Aggiungi preventivo';
     document.getElementById('form-title').textContent = 'Aggiungi nuovo preventivo';
-    document.getElementById('cancel-edit-btn').style.display = 'none';
+    document.getElementById('cancelEditBtn').style.display = 'none';
   }
 
   /**
@@ -464,7 +464,7 @@ class FamilyHotelManager {
     // Aggiorna UI per modifica
     document.getElementById('submit-btn').textContent = 'Aggiorna preventivo';
     document.getElementById('form-title').textContent = 'Modifica preventivo';
-    document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+    document.getElementById('cancelEditBtn').style.display = 'inline-block';
     
     this.showSection('add');
   }
