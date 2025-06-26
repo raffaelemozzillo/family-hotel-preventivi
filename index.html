@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Hotel Manager</title>
+    <title>Family Hotel Manager - Gestione Preventivi</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header con navigazione -->
     <header>
-        <h1>Family Hotel Manager</h1>
-        <p>Sistema completo per gestione preventivi family hotel</p>
-        <nav>
+        <h1>🏨 Family Hotel Manager</h1>
+        <p>Sistema completo per gestione preventivi hotel per famiglie</p>
+        <nav class="main-nav">
             <button id="navDashboard" class="nav-btn active">📊 Dashboard</button>
             <button id="navAdd" class="nav-btn">➕ Aggiungi</button>
             <button id="navImportUrl" class="nav-btn">🔗 Import URL</button>
@@ -19,165 +18,288 @@
     </header>
 
     <main>
-        <!-- SEZIONE DASHBOARD -->
+        <!-- Sezione Dashboard -->
         <section id="section-dashboard" class="section active">
-            <h2>Dashboard Preventivi</h2>
-            <div class="stats">
-                <div class="stat-card">
-                    <h3>Preventivi</h3>
-                    <p id="statsTotal">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Prezzo Medio</h3>
-                    <p id="statsAvg">€0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Migliore</h3>
-                    <p id="statsBest">-</p>
+            <div class="section-header">
+                <h2>Dashboard Preventivi</h2>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPreventivi">0</div>
+                        <div class="stat-label">Preventivi Totali</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgPrice">€0</div>
+                        <div class="stat-label">Prezzo Medio</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="bestHotel">-</div>
+                        <div class="stat-label">Migliore Hotel</div>
+                    </div>
                 </div>
             </div>
             
-            <div class="table-container">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Hotel</th>
-                            <th>Prezzo</th>
-                            <th>Periodo</th>
-                            <th>Valutazione</th>
-                            <th>Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboardBody">
-                        <!-- Righe generate dinamicamente -->
-                    </tbody>
-                </table>
+            <div class="dashboard-content">
+                <div class="table-container">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>🏨 Hotel</th>
+                                <th>💰 Prezzo</th>
+                                <th>📅 Periodo</th>
+                                <th>⭐ Valutazione</th>
+                                <th>⚙️ Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardBody">
+                            <!-- Righe generate dinamicamente -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
-        <!-- SEZIONE AGGIUNGI/MODIFICA -->
+        <!-- Sezione Aggiungi/Modifica -->
         <section id="section-add" class="section">
-            <h2 id="formTitle">Aggiungi Nuovo Preventivo</h2>
+            <div class="section-header">
+                <h2 id="formTitle">Aggiungi Nuovo Preventivo</h2>
+            </div>
             
             <form id="quoteForm" class="quote-form">
                 <input type="hidden" id="editId" value="">
                 
-                <div class="form-group">
-                    <label for="hotel">Nome Hotel *</label>
-                    <input type="text" id="hotel" required placeholder="Es: Family Resort Marina">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="hotel">🏨 Nome Hotel *</label>
+                        <input type="text" id="hotel" name="hotel" required 
+                               placeholder="Es. Family Resort Marina">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="prezzo">💰 Prezzo Totale (€) *</label>
+                        <input type="number" id="prezzo" name="prezzo" required 
+                               min="0" step="0.01" placeholder="1200.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="checkIn">📅 Check-in *</label>
+                        <input type="date" id="checkIn" name="checkIn" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="checkOut">📅 Check-out *</label>
+                        <input type="date" id="checkOut" name="checkOut" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adulti">👥 Adulti</label>
+                        <input type="number" id="adulti" name="adulti" 
+                               value="2" min="1" max="10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bambini">👶 Bambini</label>
+                        <input type="number" id="bambini" name="bambini" 
+                               value="2" min="0" max="10">
+                    </div>
                 </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="prezzo">Prezzo Totale (€) *</label>
-                        <input type="number" id="prezzo" step="0.01" min="0" required placeholder="1500.00">
-                    </div>
-                    <div class="form-group">
-                        <label for="checkIn">Check-in *</label>
-                        <input type="date" id="checkIn" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="checkOut">Check-out *</label>
-                        <input type="date" id="checkOut" required>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="adulti">Adulti</label>
-                        <input type="number" id="adulti" min="1" max="10" value="2">
-                    </div>
-                    <div class="form-group">
-                        <label for="bambini">Bambini</label>
-                        <input type="number" id="bambini" min="0" max="10" value="2">
-                    </div>
-                </div>
-                
-                <fieldset>
-                    <legend>Servizi Hotel</legend>
+
+                <!-- Servizi Hotel -->
+                <div class="services-section">
+                    <h3>🎯 Servizi Hotel</h3>
                     <div id="servizi-container" class="services-grid">
                         <!-- Servizi Alta Priorità -->
-                        <h4>Servizi per Famiglie (peso alto)</h4>
-                        <label><input type="checkbox" name="piscinaBambini"> Piscina per bambini</label>
-                        <label><input type="checkbox" name="miniclub"> Mini club</label>
-                        <label><input type="checkbox" name="animazione"> Animazione</label>
-                        <label><input type="checkbox" name="spiaggiaPrivata"> Spiaggia privata</label>
-                        <label><input type="checkbox" name="ristoranteBambini"> Ristorante bambini</label>
-                        <label><input type="checkbox" name="parcoBambini"> Parco giochi</label>
-                        <label><input type="checkbox" name="babySitting"> Baby sitting</label>
-                        <label><input type="checkbox" name="escursioniFamiglia"> Escursioni famiglia</label>
-                        <label><input type="checkbox" name="wifiGratuito"> WiFi gratuito</label>
-                        <label><input type="checkbox" name="parcheggioGratuito"> Parcheggio gratuito</label>
-                        <label><input type="checkbox" name="piscinaInterna"> Piscina interna</label>
-                        <label><input type="checkbox" name="spaTrattamenti"> Spa e trattamenti</label>
-                        
+                        <div class="service-category">
+                            <h4>🔥 Alta Priorità</h4>
+                            <div class="services-list">
+                                <label class="service-item">
+                                    <input type="checkbox" name="piscinaBambini">
+                                    <span>🏊 Piscina per bambini</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="miniclub">
+                                    <span>🎪 Mini club</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="animazione">
+                                    <span>🎭 Animazione</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="spiaggiaPrivata">
+                                    <span>🏖️ Spiaggia privata</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="ristoranteBambini">
+                                    <span>🍽️ Ristorante bambini</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="parcoBambini">
+                                    <span>🎠 Parco giochi</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- Servizi Media Priorità -->
-                        <h4>Servizi Aggiuntivi (peso medio)</h4>
-                        <label><input type="checkbox" name="aeroportoShuttle"> Navetta aeroporto</label>
-                        <label><input type="checkbox" name="pet"> Ammessi animali</label>
-                        <label><input type="checkbox" name="culle"> Culle disponibili</label>
-                        <label><input type="checkbox" name="camereFamiliari"> Camere familiari</label>
-                        <label><input type="checkbox" name="allInclusive"> All inclusive</label>
-                        <label><input type="checkbox" name="beachClub"> Beach club</label>
-                        <label><input type="checkbox" name="sportAcquatici"> Sport acquatici</label>
-                        <label><input type="checkbox" name="pianoBar"> Piano bar</label>
-                        <label><input type="checkbox" name="intrattenimentoSerale"> Intrattenimento serale</label>
-                        <label><input type="checkbox" name="palestra"> Palestra</label>
-                        <label><input type="checkbox" name="bikeRental"> Noleggio bici</label>
-                        <label><input type="checkbox" name="escursioni"> Escursioni</label>
-                        
-                        <!-- Servizi Base -->
-                        <h4>Servizi Base</h4>
-                        <label><input type="checkbox" name="ristorante"> Ristorante</label>
-                        <label><input type="checkbox" name="bar"> Bar</label>
+                        <div class="service-category">
+                            <h4>⚡ Media Priorità</h4>
+                            <div class="services-list">
+                                <label class="service-item">
+                                    <input type="checkbox" name="allInclusive">
+                                    <span>🍴 All inclusive</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="beachClub">
+                                    <span>🏖️ Beach club</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="wifiGratuito">
+                                    <span>📶 WiFi gratuito</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="parcheggioGratuito">
+                                    <span>🅿️ Parcheggio gratuito</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="palestra">
+                                    <span>💪 Palestra</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="spa">
+                                    <span>🧘 Spa</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Servizi Standard -->
+                        <div class="service-category">
+                            <h4>📋 Standard</h4>
+                            <div class="services-list">
+                                <label class="service-item">
+                                    <input type="checkbox" name="ristorante">
+                                    <span>🍽️ Ristorante</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="bar">
+                                    <span>🍹 Bar</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="ariaCondizionata">
+                                    <span>❄️ Aria condizionata</span>
+                                </label>
+                                <label class="service-item">
+                                    <input type="checkbox" name="ascensore">
+                                    <span>🛗 Ascensore</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                </fieldset>
-                
+                </div>
+
                 <div class="form-actions">
-                    <button type="submit" id="submitBtn" class="btn btn-primary">Aggiungi preventivo</button>
-                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display: none;">Annulla modifica</button>
+                    <button type="submit" id="submitBtn" class="btn-primary">
+                        ➕ Aggiungi Preventivo
+                    </button>
+                    <button type="button" id="cancelEditBtn" class="btn-secondary" style="display: none;">
+                        ❌ Annulla Modifica
+                    </button>
                 </div>
             </form>
         </section>
 
-        <!-- SEZIONE IMPORT URL -->
+        <!-- Sezione Import URL -->
         <section id="section-import-url" class="section">
-            <h2>Importa da URL</h2>
-            <p>💡 Inserisci il link del preventivo per estrarre automaticamente i dati.</p>
+            <div class="section-header">
+                <h2>🔗 Importa da URL</h2>
+                <p>Inserisci il link del preventivo per estrarre automaticamente i dati</p>
+            </div>
             
-            <div class="import-container">
-                <div class="form-group">
-                    <label for="importUrlInput">URL Preventivo</label>
-                    <input type="url" id="importUrlInput" placeholder="https://esempio.com/preventivo/123" class="url-input">
+            <div class="url-import-container">
+                <div class="url-input-group">
+                    <label for="importUrlInput">🌐 URL Preventivo</label>
+                    <input type="url" id="importUrlInput" 
+                           placeholder="https://esempio.com/preventivo/123456"
+                           class="url-input">
+                    <button id="importUrlBtn" class="btn-primary">
+                        🚀 Estrai Dati
+                    </button>
                 </div>
                 
-                <button id="importUrlBtn" class="btn btn-primary">🔍 Estrai Dati</button>
-                
-                <div class="import-info">
-                    <h3>Come funziona:</h3>
+                <div class="extraction-info">
+                    <h3>ℹ️ Come funziona</h3>
                     <ul>
-                        <li>Incolla l'URL del preventivo hotel</li>
-                        <li>Il sistema estrae automaticamente nome hotel, prezzo, date</li>
-                        <li>I dati vengono pre-compilati nel form</li>
-                        <li>Puoi modificare i dati prima di salvare</li>
+                        <li>✅ Compatibile con i principali portali di prenotazione</li>
+                        <li>🔄 Sistema automatico di fallback tra proxy</li>
+                        <li>📊 Estrazione intelligente di dati e servizi</li>
+                        <li>⚡ Popolamento automatico del form</li>
                     </ul>
+                </div>
+
+                <!-- Anteprima dati estratti -->
+                <div id="extractionPreview" class="extraction-preview" style="display: none;">
+                    <h3>👀 Anteprima Dati Estratti</h3>
+                    <div id="previewContent" class="preview-content">
+                        <!-- Contenuto generato dinamicamente -->
+                    </div>
+                    <div class="preview-actions">
+                        <button onclick="app.showSection('add')" class="btn-primary">
+                            ✏️ Modifica e Salva
+                        </button>
+                        <button onclick="document.getElementById('extractionPreview').style.display='none'" 
+                                class="btn-secondary">
+                            ❌ Chiudi
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Toast Container -->
-    <div id="toast-container"></div>
+    <!-- Container per toast notifications -->
+    <div id="toast-container" class="toast-container"></div>
 
-    <!-- Modal Conferma Eliminazione -->
-    <div id="deleteModal" class="modal">
+    <!-- Modal per conferma eliminazione -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
         <div class="modal-content">
-            <h3>Conferma Eliminazione</h3>
-            <p>Sei sicuro di voler eliminare questo preventivo?</p>
-            <p class="warning">⚠️ Questa operazione non può essere annullata.</p>
-            <div class="modal-actions">
-                <button id="confirmDelete" class="btn btn-danger">Elimina</button>
-                <button id="cancelDelete" class="btn btn-secondary">Annulla</button>
+            <div class="modal-header">
+                <h3>🗑️ Conferma Eliminazione</h3>
+            </div>
+            <div class="modal-body">
+                <p>Sei sicuro di voler eliminare questo preventivo?</p>
+                <p class="warning">⚠️ Questa operazione non può essere annullata.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmDelete" class="btn-danger">🗑️ Elimina</button>
+                <button id="cancelDelete" class="btn-secondary">❌ Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal per aiuto estrazione manuale -->
+    <div id="helpModal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💡 Inserimento Manuale Assistito</h3>
+            </div>
+            <div class="modal-body">
+                <p>L'estrazione automatica non è riuscita per questo URL.</p>
+                <h4>🔗 Segui questi passaggi:</h4>
+                <ol>
+                    <li>📱 Apri il link del preventivo in una nuova scheda</li>
+                    <li>📋 Copia manualmente: nome hotel, prezzo totale, date</li>
+                    <li>✏️ Incolla i dati nel form</li>
+                    <li>✅ Seleziona i servizi disponibili</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button onclick="app.showSection('add'); document.getElementById('helpModal').style.display='none';" 
+                        class="btn-primary">
+                    ✏️ Procedi con Inserimento Manuale
+                </button>
+                <button onclick="document.getElementById('helpModal').style.display='none';" 
+                        class="btn-secondary">
+                    ❌ Chiudi
+                </button>
             </div>
         </div>
     </div>
